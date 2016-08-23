@@ -6,7 +6,7 @@
 #include "moarCommons.h"
 #include "moarInterface.h"
 #include "moarInterfaceChannel.h"
-#include "moarLoraInterfacePrivate.h"
+#include "moarInterfaceLoraPrivate.h"
 
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
    

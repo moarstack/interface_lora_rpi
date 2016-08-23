@@ -7,8 +7,6 @@
 
 #include "settings.h"
 #include "loraSettings.h"
-#include "swConfig.h"
-#include "hwConfig.h"
 #include "ifaceSettings.h"
 #include "interface.h"
 

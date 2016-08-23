@@ -14,7 +14,6 @@ void* gpioPort = NULL;
 uint8_t csPort;
 uint8_t csPin;
 
-void SPI_InitLib(){}
 //init
 void SPI_Init(void *port)
 {

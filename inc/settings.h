@@ -13,5 +13,4 @@
 
 void Init_IfaceSettings(IfaceSettings_T* settings);
 
-
 #endif /* SETTINGS_H_ */

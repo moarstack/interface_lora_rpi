@@ -10,7 +10,6 @@
 
 #include "stdint.h"
 
-void SPI_InitLib();
 void SPI_Init(void *port);
 void SPI_RW_Data(void *port, uint8_t *tx, uint8_t *rx, uint8_t count);
 void SPI_DeInit(void *port);

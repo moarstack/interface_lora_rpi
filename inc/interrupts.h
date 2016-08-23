@@ -14,7 +14,6 @@
 
 #define INTERRUPT_HANDLER LORA_DIOHandler
 
-
 void Init_interupts();
 
 #endif /* INTERRUPTS_H_ */
