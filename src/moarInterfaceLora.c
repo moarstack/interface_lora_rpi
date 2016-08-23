@@ -7,11 +7,9 @@
 #include <string.h>
 #include <moarInterfaceLoraPrivate.h>
 #include <moarInterfaceCommand.h>
+#include <moarCommons.h>
 #include "moarLayerEntryPoint.h"
-#include "moarCommons.h"
-#include "moarInterface.h"
-#include "moarInterfaceChannel.h"
-#include "moarInterfaceLoraPrivate.h"
+
 
 
 int initEpoll(LoraIfaceLayer_T* layer){
@@ -62,6 +60,14 @@ int ifaceInit(LoraIfaceLayer_T* layer, void* arg){
 	return FUNC_RESULT_SUCCESS;
 }
 
+int registerInterface(LoraIfaceLayer_T* layer){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	//send register command
+	
+	return FUNC_RESULT_SUCCESS;
+}
+
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	LoraIfaceLayer_T layer = {0};
 	int initRes = ifaceInit(&layer, arg);
@@ -73,6 +79,10 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	int epollInitRes = initEpoll(&layer);
 	if(FUNC_RESULT_SUCCESS != epollInitRes)
 		return NULL;
+	//start registration here
+	int regRes = registerInterface(&layer);
+	if(FUNC_RESULT_SUCCESS != regRes)
+		return regRes;
 	// enable process
 	layer.Running = true;
 	while(layer.Running) {
