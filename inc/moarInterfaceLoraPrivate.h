@@ -6,7 +6,9 @@
 #define MOARSTACK_MOARINTERFACEPRIVATE_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <moarInterfaceChannel.h>
+#include <sys/epoll.h>
 
 #define EPOLL_SOCKETS_COUNT 				1
 #define EPOLL_CHANNEL_EVENTS 				EPOLLIN

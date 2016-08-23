@@ -3,10 +3,10 @@
 //
 
 #include <funcResults.h>
-#include <sys/epoll.h>
 #include <moarInterface.h>
 #include <string.h>
 #include <moarInterfaceLoraPrivate.h>
+#include <moarInterfaceCommand.h>
 #include "moarLayerEntryPoint.h"
 #include "moarCommons.h"
 #include "moarInterface.h"
@@ -55,9 +55,9 @@ int ifaceInit(LoraIfaceLayer_T* layer, void* arg){
 	if(FUNC_RESULT_SUCCESS != result)
 		return result;
 	//fill processing pointers
-	layer->ChannelProcessingRules[0] = MakeProcessingRule(LayerCommandType_Send, NULL);
-	layer->ChannelProcessingRules[1] = MakeProcessingRule(LayerCommandType_RegisterInterfaceResult, NULL);
-	layer->ChannelProcessingRules[2] = MakeProcessingRule(LayerCommandType_UpdateBeaconPayload, NULL);
+	layer->ChannelProcessingRules[0] = MakeProcessingRule(LayerCommandType_Send, processSendCommand);
+	layer->ChannelProcessingRules[1] = MakeProcessingRule(LayerCommandType_RegisterInterfaceResult, processRegResultCommand);
+	layer->ChannelProcessingRules[2] = MakeProcessingRule(LayerCommandType_UpdateBeaconPayload, processBeaconUpdateCommand);
 	layer->ChannelProcessingRules[3] = MakeProcessingRule(LayerCommandType_None, NULL);
 	return FUNC_RESULT_SUCCESS;
 }
