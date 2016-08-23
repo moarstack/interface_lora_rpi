@@ -2,12 +2,105 @@
 // Created by svalov, kryvashek on 05.07.16.
 //
 
+#include <funcResults.h>
+#include <sys/epoll.h>
+#include <moarInterface.h>
+#include <string.h>
+#include <moarInterfaceLoraPrivate.h>
 #include "moarLayerEntryPoint.h"
 #include "moarCommons.h"
 #include "moarInterface.h"
 #include "moarInterfaceChannel.h"
 #include "moarInterfaceLoraPrivate.h"
 
+
+int initEpoll(LoraIfaceLayer_T* layer){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	// setup settings
+	layer->EpollCount = EPOLL_EVENTS_COUNT;
+	layer->EpollTimeout = EPOLL_TIMEOUT;
+	//epoll init here
+	memset(layer->EpollEvent,0,layer->EpollCount*sizeof(struct epoll_event));
+	//init
+	layer->EpollHandler = epoll_create(1);
+	if(-1 == layer->EpollHandler) {
+		return FUNC_RESULT_FAILED;
+	}
+	// add channel socket
+	struct epoll_event epollEventChannel;
+	epollEventChannel.events = EPOLL_CHANNEL_EVENTS;
+	epollEventChannel.data.fd = layer->ChannelSocket;
+	int channelRes = epoll_ctl(layer->EpollHandler, EPOLL_CTL_ADD, layer->ChannelSocket, &epollEventChannel);
+	if(0 != channelRes)
+		return FUNC_RESULT_FAILED;
+	//return
+	return FUNC_RESULT_SUCCESS;
+}
+int ifaceInit(LoraIfaceLayer_T* layer, void* arg){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == arg)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	MoarIfaceStartupParams_T* params = (MoarLayerStartupParams_T*)arg;
+	//setup socket to channel
+	if(NULL != params->socketToChannel)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	// conect and add socket
+	strncpy( layer->ChannelSocketPath, params->socketToChannel, SOCKET_FILEPATH_SIZE );
+	// connect
+	int result = SocketOpenFile( layer->ChannelSocketPath, false, &(layer->ChannelSocket));
+	// socket should be setted
+	if(FUNC_RESULT_SUCCESS != result)
+		return result;
+	//fill processing pointers
+	layer->ChannelProcessingRules[0] = MakeProcessingRule(LayerCommandType_Send, NULL);
+	layer->ChannelProcessingRules[1] = MakeProcessingRule(LayerCommandType_RegisterInterfaceResult, NULL);
+	layer->ChannelProcessingRules[2] = MakeProcessingRule(LayerCommandType_UpdateBeaconPayload, NULL);
+	layer->ChannelProcessingRules[3] = MakeProcessingRule(LayerCommandType_None, NULL);
+	return FUNC_RESULT_SUCCESS;
+}
+
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
-   
+	LoraIfaceLayer_T layer = {0};
+	int initRes = ifaceInit(&layer, arg);
+	if(FUNC_RESULT_SUCCESS != initRes){
+		return NULL;
+	}
+	// load configuration
+	// init epoll
+	int epollInitRes = initEpoll(&layer);
+	if(FUNC_RESULT_SUCCESS != epollInitRes)
+		return NULL;
+	// enable process
+	layer.Running = true;
+	while(layer.Running) {
+		// in poll
+		int epollRes = epoll_wait(layer.EpollHandler, layer.EpollEvent,
+								  layer.EpollCount, layer.EpollTimeout);
+		// in poll
+		if(epollRes<0){
+			//perror("Routing epoll_wait");
+		}
+		for(int i=0; i<epollRes;i++) {
+			uint32_t event = layer.EpollEvent[i].events;
+			int fd = layer.EpollEvent[i].data.fd;
+			int processRes = FUNC_RESULT_FAILED;
+			if(fd == layer.ChannelSocket){
+				processRes = ProcessCommand(&layer, fd, event, EPOLL_CHANNEL_EVENTS, layer.ChannelProcessingRules);
+			}
+			else{
+				// wtf? i don`t add another sockets
+			}
+			//error processing
+			if(FUNC_RESULT_SUCCESS != processRes){
+				// we have problems
+				// return NULL;
+			}
+		}
+		//timeout | end of command processing
+
+	}
+	return NULL;
 }
