@@ -5,15 +5,15 @@
  *      Author: kryvashek
  */
 
+#include <string.h>
 #include "stdint.h"
 #include "stdlib.h"
 #include "interface.h"
-#include "task.h"
 #include "hwInterface.h"
 #include "crc16.h"
-#include "routing.h"
-#include "rnd.h"
-#include "queuedec.h"
+#include <routing.h>
+#include <port.h>
+#include <stdlib.h>
 
 //address
 IfaceAddr_T nodeAddress;
@@ -25,20 +25,20 @@ uint16_t listeningSeed;
 uint16_t beaconSendInterval;
 
 //last beacon received
-portTickType lastBeaconReceived = 0; // was -1
-portTickType lastReset = 0; // was -1
+moarTime_T lastBeaconReceived = 0; // was -1
+moarTime_T lastReset = 0; // was -1
 //next beacon send
-portTickType lastBeaconSent = 0;
+moarTime_T lastBeaconSent = 0;
 //waiting respons
 bool waitingResponse = false;
 uint16_t waitingResponseTimeout;
-portTickType waitingResponseResetTime = INFINITY_TIME;
+moarTime_T waitingResponseResetTime = INFINITY_TIME;
 bool enableReset = false;
 uint16_t transmitResetTimeout = INFINITY_TIME;
-portTickType transmitStartTime = 0;
+moarTime_T transmitStartTime = 0;
 //time of last rx
-portTickType lastReceived = 0;
-portTickType currentTime;
+moarTime_T lastReceived = 0;
+moarTime_T currentTime;
 
 //transmission state
 TransmissionState_T transmissionState;
@@ -67,7 +67,7 @@ bool startup = true;
 uint8_t* beaconData;
 RouteMsgDown_T beaconUpdate;
 bool listenBeacon = false;
-portTickType listenBeaconStart;
+moarTime_T listenBeaconStart;
 bool monitorMode = false;
 bool monitorState = false;
 NeighborInfo_T* neighbors;
@@ -103,7 +103,7 @@ void enqueueUpstreamMessage(RouteMsgDown_T message){
 	if( Iface_startHeader( message.Pack )->Response)
 		DEBUGOUT("RESPONSE\n");
 #endif
-	QueuedecWrite(QName_ifaceup,&upMessage);
+	//QueuedecWrite(QName_ifaceup,&upMessage);
 }
 
 int8_t findNeighbor(IfaceAddr_T addr){
@@ -119,12 +119,12 @@ void removeNeighbor(uint8_t index){
 	DEBUGOUT("Remove neighbor %d - 0x%08x\n", index, neighbors[index].Address);
 #endif
 	//critical section here
-	vTaskSuspendAll();
+	//vTaskSuspendAll();
 	uint8_t i;
 	for(i=index;i<neighborsCount-1;i++)
 		neighbors[i] = neighbors[i+1];
 	neighborsCount--;
-	xTaskResumeAll();
+	//xTaskResumeAll();
 }
 void updateNeighbor(bool add, uint8_t index, IfaceHeader_T* header, int16_t rssi){
 	NeighborInfo_T neighbor;
@@ -264,7 +264,7 @@ void enqueueResponse(IfaceHeader_T* header, CRCvalue_T crc){
 	message.State = PackState_prepared;
 	message.Bridge = header->From;
 	//add to queue
-	QueuedecWriteToFront(QName_routedown,&message);
+//	QueuedecWriteToFront(QName_routedown,&message);
 }
 //queue in, out, spi port, address
 void Init_Interface(IfaceAddr_T address, IfaceSettings_T* settings){
@@ -371,7 +371,7 @@ void processMessage(RxData_T* data){
 					if(header->Response)
 						DEBUGOUT("RESPONSE\n");
 #endif
-					if(!QueuedecWrite(QName_ifaceup,&message))
+//					if(!QueuedecWrite(QName_ifaceup,&message))
 						vPortFree(data->Pointer); //free if failed
 				}//if can allocate new
 			}//if beacon || correct address
@@ -450,7 +450,7 @@ uint16_t calcTimeout(uint16_t size)
 
 void sendMessageFromQueue(){
 	//prepare
-	QueuedecRead(QName_routedown,&currentMessage);
+//	QueuedecRead(QName_routedown,&currentMessage);
 	int8_t index = findNeighbor(currentMessage.Bridge);
 	IfaceHeader_T* header = Iface_startHeader( currentMessage.Pack );
 	//if no neighbor with same address
@@ -691,13 +691,15 @@ void Interface_MainTaskLoop(void *pvParameters){
 			resetInterfaceState();
 			startListen();
 		}
-		if(!QueuedecEmpty(QName_routedown)){
+		if( false
+// !QueuedecEmpty(QName_routedown)
+ 			){
 			//peek message
-			QueuedecPeek(QName_routedown,&beaconUpdate);
+//			QueuedecPeek(QName_routedown,&beaconUpdate);
 			//check
 			if(beaconUpdate.State == PackState_beaconupdate){
 				//read message
-				QueuedecRead(QName_routedown,&beaconUpdate);
+//				QueuedecRead(QName_routedown,&beaconUpdate);
 				//process
 				makeBeacon(beaconUpdate.Size,beaconUpdate.Pack);
 				beaconUpdate.State = PackState_beaconupdated;
@@ -714,7 +716,9 @@ void Interface_MainTaskLoop(void *pvParameters){
 			//continue;
 			return;
 		}
-		if(rts && !QueuedecEmpty(QName_routedown)){
+		if(rts && false
+				//!QueuedecEmpty(QName_routedown)
+				){
 			sendMessageFromQueue();
 		}
 

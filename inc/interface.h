@@ -10,7 +10,7 @@
 
 #include "packet.h"
 #include "lora.h"
-#include "FreeRTOS.h"
+#include <moarTime.h>
 
 #define INFINITY_TIME					UINT64_MAX
 // maximum size of usual iface packet payload
@@ -157,7 +157,7 @@ typedef struct{
 //neighbor struct //need critical section on operation
 typedef struct{
 	IfaceAddr_T Address;
-	portTickType LastSeen;
+	moarTime_T LastSeen;
 	FreqSeed_T	Seed;
 	int16_t		SignalLoss;
 	FreqNum_T	Frequency;

@@ -8,9 +8,7 @@
 #ifndef INC_INTHANDLER_H_
 #define INC_INTHANDLER_H_
 
-#include "board.h"
-
-
+#include <stdint.h>
 typedef enum{
 	Level_None=0,
 	Level_Low=1,

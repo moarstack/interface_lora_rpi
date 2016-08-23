@@ -5,12 +5,15 @@
  *      Author: svalov
  */
 
+#include <wchar.h>
+#include <string.h>
+#include <stdlib.h>
 #include "rfm9x.h"
 #include "spi.h"
-#include "delay.h"
 
-LPC_SSP_T* spi_port = NULL;
-LPC_GPIO_T* gpio_port = NULL;
+
+void* spi_port = NULL;
+void* gpio_port = NULL;
 static bool resetInited = true;
 int8_t reset_pin=-1;
 int8_t reset_port=-1;
@@ -23,8 +26,8 @@ uint8_t RFM9X_Init(RFM9X_Settings_T* settings){
 		gpio_port = settings->gpioPort;
 	spi_port = settings->sspPort;
 	SPI_Init(spi_port);
-	if(settings->altChipSelect)
-		SPI_AltCsInit(settings->gpioPort,settings->csPort,settings->csPin);
+//	if(settings->altChipSelect)
+//		SPI_AltCsInit(settings->gpioPort,settings->csPort,settings->csPin);
 	useReset = settings->useReset;
 	reset_port = settings->resetPort;
 	reset_pin  = settings->resetPin;
@@ -47,17 +50,17 @@ uint8_t RFM9X_Reset(){
 		if(gpio_port==NULL)
 			return RESULT_ERROR_NORESET;
 		if(resetInited){
-			Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_GPIO);
-			Chip_GPIO_WriteDirBit(gpio_port, reset_port, reset_pin, true);
+			//Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_GPIO);
+			//Chip_GPIO_WriteDirBit(gpio_port, reset_port, reset_pin, true);
 		}
 		//pull down
-		Chip_GPIO_WritePortBit(gpio_port, reset_port, reset_pin, false);
+		//Chip_GPIO_WritePortBit(gpio_port, reset_port, reset_pin, false);
 		//delay 10ms
-		DELAY_FUNC(10);
+		//DELAY_FUNC(10);
 		//push up
-		Chip_GPIO_WritePortBit(gpio_port, reset_port, reset_pin, true);
+		//Chip_GPIO_WritePortBit(gpio_port, reset_port, reset_pin, true);
 		//delay for wakeup 50ms
-		DELAY_FUNC(50);
+		//DELAY_FUNC(50);
 		resetInited = false;
 		return RESULT_OK;
 	}

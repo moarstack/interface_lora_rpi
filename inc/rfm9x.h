@@ -9,8 +9,8 @@
 #define INC_RFM9X_H_
 
 #include "stdint.h"
-#include "board.h"
 #include "rfm9x_reg.h"
+#include <stdbool.h>
 
 #define SINGLE_REG_BUFFER_SIZE 	2
 #define FULL_REG_BUFFER_SIZE 	0x65
@@ -25,8 +25,8 @@
 #define DELAY_FUNC				delay_ms
 
 typedef struct{
-	LPC_SSP_T* sspPort;
-	LPC_GPIO_T* gpioPort;
+	void* sspPort;
+	void* gpioPort;
 	bool useReset;
 	int8_t resetPort;
 	int8_t resetPin;

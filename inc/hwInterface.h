@@ -9,7 +9,6 @@
 #define HWINTERFACE_H_
 
 #include "stdint.h"
-#include "board.h"
 #include "lora.h"
 
 typedef struct {

@@ -5,6 +5,7 @@
  *  Created on: 03 февр. 2016 г.
  *      Author: svalov
  */
+#include "port.h"
 #include "hwInterface.h"
 #include "stdfunc.h"
 #include "string.h"
