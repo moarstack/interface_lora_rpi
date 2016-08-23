@@ -592,7 +592,7 @@ void Interface_MainTaskLoop(void *pvParameters){
 			))
 		{
 			//in critical section
-			vTaskSuspendAll();
+			//vTaskSuspendAll();
 			//oops, no response from iface
 #ifdef DEBUG_LEVEL0
 			DEBUGOUT("IFACE TIMEOUT - RESET LORA\n");
@@ -602,7 +602,7 @@ void Interface_MainTaskLoop(void *pvParameters){
 			enableReset = false;
 			netSpeed = 0;
 			resetInterfaceState();
-			xTaskResumeAll();
+			//xTaskResumeAll();
 		}
 		//waiting timeout
 		if(waitingResponse && currentTime>waitingResponseResetTime){

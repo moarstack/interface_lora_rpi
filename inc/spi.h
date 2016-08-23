@@ -8,7 +8,8 @@
 #ifndef INC_SPI_H_
 #define INC_SPI_H_
 
-//#include "board.h"
+#include "stdint.h"
+
 void SPI_InitLib();
 void SPI_Init(void *port);
 void SPI_RW_Data(void *port, uint8_t *tx, uint8_t *rx, uint8_t count);
