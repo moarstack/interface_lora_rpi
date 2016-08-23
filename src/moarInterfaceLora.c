@@ -41,7 +41,7 @@ int ifaceInit(LoraIfaceLayer_T* layer, void* arg){
 	if(NULL == arg)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	MoarIfaceStartupParams_T* params = (MoarLayerStartupParams_T*)arg;
+	MoarIfaceStartupParams_T* params = (MoarIfaceStartupParams_T*)arg;
 	//setup socket to channel
 	if(NULL != params->socketToChannel)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -64,8 +64,19 @@ int registerInterface(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	//send register command
-	
-	return FUNC_RESULT_SUCCESS;
+	IfaceRegisterMetadata_T metadata = {0};
+	metadata.Length = IFACE_ADDR_SIZE;
+	metadata.Value = layer->LocalAddress;
+
+	LayerCommandStruct_T command = {0};
+	command.Data = NULL;
+	command.DataSize = 0;
+	command.MetaData = &metadata;
+	command.MetaSize = sizeof(IfaceRegisterMetadata_T);
+
+	int res = WriteCommand(layer->ChannelSocket, &command);
+
+	return res;
 }
 
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
@@ -82,7 +93,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	//start registration here
 	int regRes = registerInterface(&layer);
 	if(FUNC_RESULT_SUCCESS != regRes)
-		return regRes;
+		return NULL;
 	// enable process
 	layer.Running = true;
 	while(layer.Running) {
