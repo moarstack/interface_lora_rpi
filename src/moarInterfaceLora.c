@@ -8,6 +8,7 @@
 #include <moarInterfaceLoraPrivate.h>
 #include <moarInterfaceCommand.h>
 #include <moarCommons.h>
+#include <wiringPi.h>
 #include "moarLayerEntryPoint.h"
 
 
@@ -87,6 +88,9 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 		return NULL;
 	}
 	// load configuration
+	// init hardware
+	//int wpiRes = wiringPiSetup();
+	// init lora
 	// init epoll
 	int epollInitRes = initEpoll(&layer);
 	if(FUNC_RESULT_SUCCESS != epollInitRes)
