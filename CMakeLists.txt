@@ -13,7 +13,10 @@ include_directories(../shared/inc)
 
 #add local headers
 include_directories(inc)
-
+#include wiring pi here
+include_directories(${WIRING_PI_INC_PATH})
+message("WiringPI include path = " ${WIRING_PI_INC_PATH})
 #add library
 add_library(moar_interface_lora_rpi SHARED ${SRC_FILES})
 target_link_libraries(moar_interface_lora_rpi moar_shared)
+target_link_libraries(moar_interface_lora_rpi wiringPi)
