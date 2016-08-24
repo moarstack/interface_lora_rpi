@@ -25,14 +25,11 @@
 #define DELAY_FUNC				delay_ms
 
 typedef struct{
-	void* sspPort;
-	void* gpioPort;
+	int spiChannel;
+	int spiSpeed;
 	bool useReset;
-	int8_t resetPort;
-	int8_t resetPin;
-	bool altChipSelect;
-	int8_t csPort;
-	int8_t csPin;
+	int resetPin;
+	int resetPort;
 } RFM9X_Settings_T;
 
 uint8_t RFM9X_Init(RFM9X_Settings_T* settings);

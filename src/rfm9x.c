@@ -8,24 +8,23 @@
 #include <wchar.h>
 #include <string.h>
 #include <stdlib.h>
+#include <rfm9x.h>
 #include "rfm9x.h"
 #include "spi.h"
 
 
-void* spi_port = NULL;
-void* gpio_port = NULL;
+int spiSpeed = 1000000;
+int spiChannel = -1;
 static bool resetInited = true;
-int8_t reset_pin=-1;
-int8_t reset_port=-1;
+int8_t reset_pin = -1;
+int8_t reset_port = -1;
 bool useReset = false;
 //init
 uint8_t RFM9X_Init(RFM9X_Settings_T* settings){
-	if(spi_port!=NULL)
-		return RESULT_ERROR_REINIT;
-	if(settings->gpioPort!=NULL)
-		gpio_port = settings->gpioPort;
-	spi_port = settings->sspPort;
-	SPI_Init(spi_port);
+	//check args
+	spiChannel = settings->spiChannel;
+	spiSpeed = settings->spiSpeed;
+	SPI_Init(settings->spiChannel, settings->spiSpeed);
 //	if(settings->altChipSelect)
 //		SPI_AltCsInit(settings->gpioPort,settings->csPort,settings->csPin);
 	useReset = settings->useReset;
@@ -36,10 +35,10 @@ uint8_t RFM9X_Init(RFM9X_Settings_T* settings){
 //deinit
 uint8_t RFM9X_DeInit(){
 
-	if(spi_port==NULL)
+	if(spiChannel>=0)
 		return RESULT_ERROR_NOTINIT;
-	SPI_DeInit(spi_port);
-	spi_port = NULL;
+	SPI_DeInit(spiChannel);
+	spiChannel = -1;
 	return 0;
 }
 
@@ -47,20 +46,14 @@ uint8_t RFM9X_Reset(){
 	if(useReset){
 		if(reset_pin<0 && reset_port<0)
 			return RESULT_ERROR_NORESET;
-		if(gpio_port==NULL)
-			return RESULT_ERROR_NORESET;
 		if(resetInited){
-			//Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_GPIO);
-			//Chip_GPIO_WriteDirBit(gpio_port, reset_port, reset_pin, true);
+			//init
 		}
 		//pull down
-		//Chip_GPIO_WritePortBit(gpio_port, reset_port, reset_pin, false);
 		//delay 10ms
-		//DELAY_FUNC(10);
+
 		//push up
-		//Chip_GPIO_WritePortBit(gpio_port, reset_port, reset_pin, true);
 		//delay for wakeup 50ms
-		//DELAY_FUNC(50);
 		resetInited = false;
 		return RESULT_OK;
 	}
@@ -71,7 +64,7 @@ uint8_t RFM9X_Reset(){
 //read register
 uint8_t RFM9X_ReadRegister(uint8_t reg, uint8_t *val){
 
-	if(spi_port==NULL)
+	if(spiChannel>=0)
 		return RESULT_ERROR_NOTINIT;
 
 	//build
@@ -80,7 +73,7 @@ uint8_t RFM9X_ReadRegister(uint8_t reg, uint8_t *val){
 	//set
 	tx[0] = reg & READ_MASK;
 	//write
-	SPI_RW_Data(spi_port,tx,rx,SINGLE_REG_BUFFER_SIZE);
+	SPI_RW_Data(spiChannel,tx,rx,SINGLE_REG_BUFFER_SIZE);
 	//get
 	*val = rx[1];
 	return 0;
@@ -88,7 +81,7 @@ uint8_t RFM9X_ReadRegister(uint8_t reg, uint8_t *val){
 //write register
 uint8_t RFM9X_WriteRegister(uint8_t reg, uint8_t val){
 
-	if(spi_port==NULL)
+	if(spiChannel>=0)
 		return RESULT_ERROR_NOTINIT;
 
 	//build
@@ -98,7 +91,7 @@ uint8_t RFM9X_WriteRegister(uint8_t reg, uint8_t val){
 	tx[0] = reg | WRITE_MASK;
 	tx[1] = val;
 	//write
-	SPI_RW_Data(spi_port,tx,rx,SINGLE_REG_BUFFER_SIZE);
+	SPI_RW_Data(spiChannel,tx,rx,SINGLE_REG_BUFFER_SIZE);
 	return 0;
 }
 //read variable
@@ -131,9 +124,9 @@ uint8_t RFM9X_BurstRead(uint8_t baseReg, uint8_t *rx, uint8_t count){
 	uint8_t tx[count];
 	memset(tx,0x00,count);
 	tx[0] = baseReg;
-	if(spi_port==NULL)
+	if(spiChannel<0)
 		return RESULT_ERROR_NOTINIT;
-	SPI_RW_Data(spi_port,tx,rx,count);
+	SPI_RW_Data(spiChannel,tx,rx,count);
 	return RESULT_OK;
 }
 
@@ -143,9 +136,9 @@ uint8_t RFM9X_BurstWrite(uint8_t baseReg, uint8_t *txd, uint8_t count){
 	memcpy( tx + 1, txd, count );
 	memset(rx,0x00,count+1);
 	tx[0] = baseReg | WRITE_MASK;
-	if(spi_port==NULL)
+	if(spiChannel<0)
 		return RESULT_ERROR_NOTINIT;
-	SPI_RW_Data(spi_port,tx,rx,count+1);
+	SPI_RW_Data(spiChannel,tx,rx,count+1);
 	return RESULT_OK;
 }
 
