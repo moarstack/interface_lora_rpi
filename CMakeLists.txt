@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(libmoar_interface_rpi_lora) 
+project(libmoar_interface_lora_rpi) 
 
 set(LIBRARY_OUTPUT_PATH ../../lib)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -g3 -fPIC")
@@ -15,5 +15,5 @@ include_directories(../shared/inc)
 include_directories(inc)
 
 #add library
-add_library(moar_interface_rpi_lora SHARED ${SRC_FILES})
-target_link_libraries(moar_interface_rpi_lora moar_shared)
+add_library(moar_interface_lora_rpi SHARED ${SRC_FILES})
+target_link_libraries(moar_interface_lora_rpi moar_shared)
