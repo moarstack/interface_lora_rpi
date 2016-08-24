@@ -29,7 +29,7 @@ typedef struct{
 	int 					EpollCount;
 	bool 					Running;
 	int 					EpollTimeout;
-	bool 					Enabled;
+	bool 					Registred;
 	CommandProcessingRule_T ChannelProcessingRules[CHANNEL_PROCESSING_RULES_COUNT];
 	SocketFilepath_T 		ChannelSocketPath;
 	IfaceAddr_T				LocalAddress;

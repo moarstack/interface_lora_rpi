@@ -5,6 +5,7 @@
 #include <funcResults.h>
 #include <moarInterfaceLoraPrivate.h>
 #include <moarInterfaceCommand.h>
+#include <moarCommons.h>
 
 int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
 	if(NULL == layerRef)
@@ -38,6 +39,7 @@ int processRegResultCommand(void* layerRef, int fd, LayerCommandStruct_T* comman
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	LoraIfaceLayer_T* layer = (LoraIfaceLayer_T*)layerRef;
-	//logic here
+	ChannelRegisterResultMetadata_T* regResult = (ChannelRegisterResultMetadata_T*)command->MetaData;
+	layer->Registred = regResult;
 	return FUNC_RESULT_SUCCESS;
 }
