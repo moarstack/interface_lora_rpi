@@ -43,7 +43,7 @@ int ifaceInit(LoraIfaceLayer_T* layer, void* arg){
 
 	MoarIfaceStartupParams_T* params = (MoarIfaceStartupParams_T*)arg;
 	//setup socket to channel
-	if(NULL != params->socketToChannel)
+	if(NULL == params->socketToChannel)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	// conect and add socket
 	strncpy( layer->ChannelSocketPath, params->socketToChannel, SOCKET_FILEPATH_SIZE );
@@ -69,6 +69,7 @@ int registerInterface(LoraIfaceLayer_T* layer){
 	metadata.Value = layer->LocalAddress;
 
 	LayerCommandStruct_T command = {0};
+	command.Command = LayerCommandType_RegisterInterface;
 	command.Data = NULL;
 	command.DataSize = 0;
 	command.MetaData = &metadata;
