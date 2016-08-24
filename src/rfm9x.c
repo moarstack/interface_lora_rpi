@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <rfm9x.h>
+#include <wiringPi.h>
 #include "rfm9x.h"
 #include "spi.h"
 
@@ -48,12 +49,18 @@ uint8_t RFM9X_Reset(){
 			return RESULT_ERROR_NORESET;
 		if(resetInited){
 			//init
+			wiringPiSetupGpio();
+			pinMode(reset_pin, OUTPUT);
+			pullUpDnControl(reset_pin, PUD_UP);
 		}
 		//pull down
+		digitalWrite(reset_pin,0);
 		//delay 10ms
-
+		delay(10);
 		//push up
+		digitalWrite(reset_pin,1);
 		//delay for wakeup 50ms
+		delay(50);
 		resetInited = false;
 		return RESULT_OK;
 	}

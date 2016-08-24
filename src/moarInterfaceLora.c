@@ -90,6 +90,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	// load configuration
 	// init hardware
 	//int wpiRes = wiringPiSetup();
+	//int wpiGpioRes = wiringPiSetupGpio();
 	// init lora
 	// init epoll
 	int epollInitRes = initEpoll(&layer);
