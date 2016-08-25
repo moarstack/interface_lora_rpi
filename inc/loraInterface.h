@@ -7,7 +7,7 @@
 
 #include <moarInterfaceLoraPrivate.h>
 
-int ifaceInit(LoraIfaceLayer_T* layer);
+int interfaceInit(LoraIfaceLayer_T* layer);
 int stateProcessing(LoraIfaceLayer_T* layer);
 
 #endif //MOARSTACK_LORAINTERFACE_H

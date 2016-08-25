@@ -11,6 +11,7 @@
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
 #include <string.h>
+#include <hwConfig.h>
 
 static int spiChannel = 0;
 
@@ -18,12 +19,16 @@ static int spiChannel = 0;
 void SPI_Init(int channel, int speed)
 {
 	spiChannel = channel;
+#ifdef ENABLE_IO
 	int spiRes = wiringPiSPISetup(channel, speed);
+#endif
 }
 //send
 void SPI_RW_Data(int channel, uint8_t *tx, uint8_t *rx, uint8_t count){
+#ifdef ENABLE_IO
 	memcpy(rx,tx,count);
 	int res = wiringPiSPIDataRW(channel, rx, count);
+#endif
 }
 
 void SPI_DeInit(int channel){

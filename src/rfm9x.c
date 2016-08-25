@@ -47,9 +47,9 @@ uint8_t RFM9X_Reset(){
 	if(useReset){
 		if(reset_pin<0 && reset_port<0)
 			return RESULT_ERROR_NORESET;
+#ifdef ENABLE_IO
 		if(resetInited){
 			//init
-			wiringPiSetupGpio();
 			pinMode(reset_pin, OUTPUT);
 			pullUpDnControl(reset_pin, PUD_UP);
 		}
@@ -61,6 +61,7 @@ uint8_t RFM9X_Reset(){
 		digitalWrite(reset_pin,1);
 		//delay for wakeup 50ms
 		delay(50);
+#endif
 		resetInited = false;
 		return RESULT_OK;
 	}

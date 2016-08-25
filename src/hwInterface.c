@@ -10,6 +10,8 @@
 #include "stdfunc.h"
 #include "string.h"
 
+#define inline
+
 #define LORA_HEADER_OVERHEAD 4
 #define LORA_CRC_OVERHEAD 2
 #define LORA_PREAMBLE_CONST_OVERHEAD 5
