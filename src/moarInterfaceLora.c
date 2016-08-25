@@ -91,6 +91,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	// init settings
 	Init_IfaceSettings(&(layer.Settings));
 	// init hardware
+
 	// int wpiRes = wiringPiSetup();
 	// int wpiGpioRes = wiringPiSetupGpio();
 	// init interrupts
