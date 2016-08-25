@@ -12,8 +12,8 @@ int interfaceInit(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	bool res = Init_LORA(&(layer->Settings.LORA_Settings));
-	if(!res)
-		return FUNC_RESULT_FAILED;
+//	if(!res)
+//		return FUNC_RESULT_FAILED;
 	// init neighbors here
 	// create beacon packet here
 	// reset interface state here
