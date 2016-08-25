@@ -21,6 +21,7 @@ typedef struct {
 	uint8_t Address[IFACE_ADDR_SIZE];
 }IfaceAddr_T;
 
+#include <moarILoraSettings.h>
 
 typedef struct{
 	int 					ChannelSocket;
@@ -33,6 +34,7 @@ typedef struct{
 	CommandProcessingRule_T ChannelProcessingRules[CHANNEL_PROCESSING_RULES_COUNT];
 	SocketFilepath_T 		ChannelSocketPath;
 	IfaceAddr_T				LocalAddress;
+	IfaceSettings_T			Settings;
 }LoraIfaceLayer_T;
 
 #pragma pack(push, 1)

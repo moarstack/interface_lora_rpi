@@ -10,7 +10,7 @@
 #include "ifaceSettings.h"
 #include "interface.h"
 
-inline void Init_LORASettings(LORA_Settings_T* settings){
+void Init_LORASettings(LORA_Settings_T* settings){
 	settings->MinFrequency = MIN_FREQUENCY;
 	settings->MaxFrequency = MAX_FREQUENCY;
 	settings->MinChannelBandWidth = MIN_CHANNEL_BANDWIDTH;
@@ -31,7 +31,7 @@ inline void Init_LORASettings(LORA_Settings_T* settings){
 	settings->RxPayloadCRC = LORA_RXPAYLOADCRC;
 }
 
-inline void Init_IfaceSettings(IfaceSettings_T* settings){
+void Init_IfaceSettings(IfaceSettings_T* settings){
 	Init_LORASettings(&(settings->LORA_Settings));
 
 	settings->DataTxPower = LORA_OUTPUTPOWER;
@@ -48,7 +48,6 @@ inline void Init_IfaceSettings(IfaceSettings_T* settings){
 	settings->BeaconSeed = BEACON_SEED;
 	settings->MonitorChannel = BEACON_CHANNEL;
 	settings->MonitorSeed = BEACON_SEED;
-	settings->BeaconAddress = BEACON_DEFAULT_ADDRESS;
 	settings->BeaconDefaultPayloadSize = BEACON_DEFAULT_PAYLOAD_SIZE;
 	settings->BeaconSendInterval = BEACON_SEND_INTERVAL;
 	settings->BeaconSendDeviation = BEACON_SEND_DEVIATION;

@@ -10,7 +10,7 @@
 #include <moarCommons.h>
 #include <wiringPi.h>
 #include "moarLayerEntryPoint.h"
-
+#include <settings.h>
 
 
 int initEpoll(LoraIfaceLayer_T* layer){
@@ -88,10 +88,15 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 		return NULL;
 	}
 	// load configuration
+	// init settings
+	Init_IfaceSettings(&(layer.Settings));
 	// init hardware
-	//int wpiRes = wiringPiSetup();
-	//int wpiGpioRes = wiringPiSetupGpio();
-	// init lora
+	// int wpiRes = wiringPiSetup();
+	// int wpiGpioRes = wiringPiSetupGpio();
+	// init interrupts
+	// init internal interface
+	//
+
 	// init epoll
 	int epollInitRes = initEpoll(&layer);
 	if(FUNC_RESULT_SUCCESS != epollInitRes)
