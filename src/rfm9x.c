@@ -22,7 +22,7 @@ int spiChannel = -1;
 static bool resetInited = true;
 int8_t reset_pin = -1;
 int8_t reset_port = -1;
-bool useReset = true;
+bool useReset = false;
 //init
 uint8_t RFM9X_Init(RFM9X_Settings_T* settings){
 	//check args
@@ -45,27 +45,21 @@ uint8_t RFM9X_DeInit(){
 }
 
 uint8_t RFM9X_Reset(){
-	printf("try to reseting lora\n");
 	if(useReset){
 		if(reset_pin<0 && reset_port<0) {
-			printf("wrong pin\n");
 			return RESULT_ERROR_NORESET;
 		}
 #ifdef ENABLE_IO
-		printf("reseting lora\n");
 		if(resetInited){
-			printf("reset init\n");
 			//init
 			pinMode(reset_pin, OUTPUT);
 			pullUpDnControl(reset_pin, PUD_UP);
 		}
 		//pull down
-		printf("reset down\n");
 		digitalWrite(reset_pin,0);
 		//delay 10ms
 		delay(10);
 		//push up
-		printf("reset up\n");
 		digitalWrite(reset_pin,1);
 		//delay for wakeup 50ms
 		delay(50);

@@ -12,31 +12,22 @@
 #include <wiringPiSPI.h>
 #include <string.h>
 #include <hwConfig.h>
-#include <stdio.h>
 static int spiChannel = 0;
 
 //init
 void SPI_Init(int channel, int speed)
 {
-	printf("SPI INTERNAL INIT\n");
+#ifdef ENABLE_IO
 	spiChannel = channel;
 	int spiRes = wiringPiSPISetup(channel, speed);
-	printf("SPI %d\n",spiRes);
+#endif
 }
 //send
 void SPI_RW_Data(int channel, uint8_t *tx, uint8_t *rx, uint8_t count){
-//	//printf("Tx: ");
-//	for(int i=0;i<count; i++){
-//		//printf("%x",tx[i]);
-//	}
-//	//printf("\n");
+#ifdef ENABLE_IO
 	memcpy(rx,tx,count);
 	int res = wiringPiSPIDataRW(channel, rx, count);
-//	//printf("Rx: ");
-//	for(int i=0;i<count; i++){
-//		//printf("%x",rx[i]);
-//	}
-//	printf("\n");
+#endif
 }
 
 void SPI_DeInit(int channel){
