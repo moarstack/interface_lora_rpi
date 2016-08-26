@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <moarInterfaceLoraPrivate.h>
+#include <packet.h>
 
 // typedefs for iface header fields
 //typedef uint32_t	IfaceAddr_T;	// type for interface addresses

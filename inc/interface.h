@@ -13,7 +13,7 @@
 #include <moarTime.h>
 #include <moarInterfaceLoraPrivate.h>
 #include <moarIfaceStructs.h>
-#include <moarILoraSettings.h>
+#include <moarLoraSettings.h>
 #include <interfaceNeighbors.h>
 
 

@@ -4,7 +4,7 @@
 
 #include <funcResults.h>
 #include <moarInterfaceLoraPrivate.h>
-#include <moarILoraSettings.h>
+#include <moarLoraSettings.h>
 #include <hwInterface.h>
 #include <interrupts.h>
 #include <wiringPi.h>

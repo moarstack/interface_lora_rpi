@@ -16,12 +16,13 @@
 #define EPOLL_EVENTS_COUNT					EPOLL_SOCKETS_COUNT
 #define CHANNEL_PROCESSING_RULES_COUNT		5
 #define IFACE_ADDR_SIZE						4
-
+#define NEIGHBORS_TABLE_SIZE				37
 typedef struct {
 	uint8_t Address[IFACE_ADDR_SIZE];
 }IfaceAddr_T;
 
-#include <moarILoraSettings.h>
+#include <moarLoraSettings.h>
+#include <hashTable.h>
 
 typedef struct{
 	int 					ChannelSocket;
@@ -38,6 +39,7 @@ typedef struct{
 	void* 					BeaconData;
 	uint8_t 				ListeningChannel;
 	uint16_t 				ListeningSeed;
+	hashTable_T				Neighbors;
 }LoraIfaceLayer_T;
 
 #pragma pack(push, 1)
