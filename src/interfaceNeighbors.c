@@ -6,6 +6,7 @@
 #include <hashFunc.h>
 #include <hashTable.h>
 #include <funcResults.h>
+#include <interfaceNeighbors.h>
 
 #define HASH_CONST	0xf2e143
 
@@ -24,6 +25,7 @@ int neighborsAdd(LoraIfaceLayer_T* layer, NeighborInfo_T* neighbor){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == neighbor)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	// todo add channel notification here
 	int res = hashAdd(&(layer->Neighbors),&(neighbor->Address), neighbor);
 	return res;
 }
@@ -57,7 +59,7 @@ int neighborsRemove(LoraIfaceLayer_T* layer, IfaceAddr_T* addr){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == addr)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-
+	// todo add channel notification her
 	int res = hashRemove(&(layer->Neighbors), addr);
 	return res;
 }
@@ -70,12 +72,25 @@ int neighborsUpdateSendtrys(LoraIfaceLayer_T* layer, IfaceAddr_T* addr, bool res
 	if(NULL != stored){
 		if(responded) {
 			stored->LastFailedTrys = 0;
+			stored->LastSeen = timeGetCurrent();
 			return FUNC_RESULT_SUCCESS;
 		}
 		else if(stored->LastFailedTrys>layer->Settings.MaxNeighborSendTrys) {
 			int res = neighborsRemove(layer, addr);
 			return res;
 		}
+	}
+	return FUNC_RESULT_FAILED;
+}
+int neighborsUpdateLastSeen(LoraIfaceLayer_T* layer, IfaceAddr_T* addr){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == addr)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	NeighborInfo_T* stored = hashGetPtr(&(layer->Neighbors),addr);
+	if(NULL != stored){
+		stored->LastSeen = timeGetCurrent();
+		return FUNC_RESULT_SUCCESS;
 	}
 	return FUNC_RESULT_FAILED;
 }
