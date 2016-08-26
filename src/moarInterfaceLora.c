@@ -126,7 +126,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 				// return NULL;
 			}
 		}
-		int stateProcess = stateProcessing(&layer);
+		int stateProcess = interfaceStateProcessing(&layer);
 
 	}
 	return NULL;
