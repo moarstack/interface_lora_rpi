@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-#define IFACE_ADDR_SIZE	8
+#define IFACE_ADDR_SIZE	4
 
 typedef uint8_t	IfaceAddr_T[ IFACE_ADDR_SIZE ];
 
