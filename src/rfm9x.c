@@ -12,6 +12,9 @@
 #include <wiringPi.h>
 #include "rfm9x.h"
 #include "spi.h"
+#include <hwConfig.h>
+#include <printf.h>
+#include <stdio.h>
 
 
 int spiSpeed = 1000000;
@@ -19,7 +22,7 @@ int spiChannel = -1;
 static bool resetInited = true;
 int8_t reset_pin = -1;
 int8_t reset_port = -1;
-bool useReset = false;
+bool useReset = true;
 //init
 uint8_t RFM9X_Init(RFM9X_Settings_T* settings){
 	//check args
@@ -31,33 +34,38 @@ uint8_t RFM9X_Init(RFM9X_Settings_T* settings){
 	useReset = settings->useReset;
 	reset_port = settings->resetPort;
 	reset_pin  = settings->resetPin;
+
 	return 0;
 }
 //deinit
 uint8_t RFM9X_DeInit(){
-
-	if(spiChannel>=0)
-		return RESULT_ERROR_NOTINIT;
 	SPI_DeInit(spiChannel);
 	spiChannel = -1;
 	return 0;
 }
 
 uint8_t RFM9X_Reset(){
+	printf("try to reseting lora\n");
 	if(useReset){
-		if(reset_pin<0 && reset_port<0)
+		if(reset_pin<0 && reset_port<0) {
+			printf("wrong pin\n");
 			return RESULT_ERROR_NORESET;
+		}
 #ifdef ENABLE_IO
+		printf("reseting lora\n");
 		if(resetInited){
+			printf("reset init\n");
 			//init
 			pinMode(reset_pin, OUTPUT);
 			pullUpDnControl(reset_pin, PUD_UP);
 		}
 		//pull down
+		printf("reset down\n");
 		digitalWrite(reset_pin,0);
 		//delay 10ms
 		delay(10);
 		//push up
+		printf("reset up\n");
 		digitalWrite(reset_pin,1);
 		//delay for wakeup 50ms
 		delay(50);
@@ -72,9 +80,6 @@ uint8_t RFM9X_Reset(){
 //read register
 uint8_t RFM9X_ReadRegister(uint8_t reg, uint8_t *val){
 
-	if(spiChannel>=0)
-		return RESULT_ERROR_NOTINIT;
-
 	//build
 	uint8_t tx[SINGLE_REG_BUFFER_SIZE] = {0};
 	uint8_t rx[SINGLE_REG_BUFFER_SIZE] = {0};
@@ -88,9 +93,6 @@ uint8_t RFM9X_ReadRegister(uint8_t reg, uint8_t *val){
 }
 //write register
 uint8_t RFM9X_WriteRegister(uint8_t reg, uint8_t val){
-
-	if(spiChannel>=0)
-		return RESULT_ERROR_NOTINIT;
 
 	//build
 	uint8_t tx[SINGLE_REG_BUFFER_SIZE] = {0};
@@ -132,8 +134,6 @@ uint8_t RFM9X_BurstRead(uint8_t baseReg, uint8_t *rx, uint8_t count){
 	uint8_t tx[count];
 	memset(tx,0x00,count);
 	tx[0] = baseReg;
-	if(spiChannel<0)
-		return RESULT_ERROR_NOTINIT;
 	SPI_RW_Data(spiChannel,tx,rx,count);
 	return RESULT_OK;
 }
@@ -144,8 +144,6 @@ uint8_t RFM9X_BurstWrite(uint8_t baseReg, uint8_t *txd, uint8_t count){
 	memcpy( tx + 1, txd, count );
 	memset(rx,0x00,count+1);
 	tx[0] = baseReg | WRITE_MASK;
-	if(spiChannel<0)
-		return RESULT_ERROR_NOTINIT;
 	SPI_RW_Data(spiChannel,tx,rx,count+1);
 	return RESULT_OK;
 }

@@ -7,7 +7,7 @@
 #include "intHandler.h"
 #include <hwConfig.h>
 #include <funcResults.h>
-
+#include <wiringPi.h>
 #define INT_COUNT 6
 
 //#define ENABLE_PORT0
@@ -35,37 +35,43 @@ static INT_PORT_PIN_T handlerPins[INT_COUNT];
 #if INT_COUNT>0
 void INT0_HANDLER(void){
 	int index = 0;
-       if(handler)
+	int state = digitalRead(handlerPins[index].Pin);
+       if(handler && state == HIGH)
 		   handler(handlerPins[index].Port, handlerPins[index].Pin);
 }
 #if INT_COUNT>1
 void INT1_HANDLER(void){
 	int index = 1;
-       if(handler)
+	int state = digitalRead(handlerPins[index].Pin);
+	if(handler && state == HIGH)
 		   handler(handlerPins[index].Port, handlerPins[index].Pin);
 }
 #if INT_COUNT>2
 void INT2_HANDLER(void){
 	int index = 2;
-       if(handler)
+	int state = digitalRead(handlerPins[index].Pin);
+	if(handler && state == HIGH)
 		   handler(handlerPins[index].Port, handlerPins[index].Pin);
 }
 #if INT_COUNT>3
 void INT3_HANDLER(void){
 	int index = 3;
-       if(handler)
+	int state = digitalRead(handlerPins[index].Pin);
+	if(handler && state == HIGH)
 		   handler(handlerPins[index].Port, handlerPins[index].Pin);
 }
 #if INT_COUNT>4
 void INT4_HANDLER(void){
 	int index = 4;
-       if(handler)
+	int state = digitalRead(handlerPins[index].Pin);
+	if(handler && state == HIGH)
 		   handler(handlerPins[index].Port, handlerPins[index].Pin);
 }
 #if INT_COUNT>5
 void INT5_HANDLER(void){
 	int index = 5;
-       if(handler)
+	int state = digitalRead(handlerPins[index].Pin);
+	if(handler && state == HIGH)
 		   handler(handlerPins[index].Port, handlerPins[index].Pin);
 }
 #endif //5
@@ -101,18 +107,15 @@ void Int_Init(pinIrqHandler pinHandler){
 uint8_t Int_AddPinInt(uint8_t port, uint8_t pin, uint32_t modefunc, Level_T level, Mode_T mode){
 	if(handlersCount>=INT_COUNT)
 		return FUNC_RESULT_FAILED;
-	handlerPins->Pin = pin;
-	handlerPins->Port = port;
-#ifdef Enabled_IO
-	if(mode == Mode_Level)
-		Chip_GPIO_SetPinModeLevel(LPC_GPIO_PORT, port, (1 << pin));
-	else if(mode == Mode_Edge)
-		Chip_GPIO_SetPinModeEdge(LPC_GPIO_PORT, port, (1 << pin));
-
+	handlerPins[handlersCount].Pin = pin;
+	handlerPins[handlersCount].Port = port;
+#ifdef ENABLE_IO
+	pinMode(pin, INPUT);
+	pullUpDnControl(pin,PUD_DOWN);
 	if(level & Level_Low)
-		Chip_GPIO_SetModeLow(LPC_GPIO_PORT, port, (1 << pin));
+		wiringPiISR(pin, INT_EDGE_FALLING, handlerPins[handlersCount].Function);
 	if(level & Level_High)
-		Chip_GPIO_SetModeHigh(LPC_GPIO_PORT, port, (1 << pin));
+		wiringPiISR(pin, INT_EDGE_RISING, handlerPins[handlersCount].Function);
 #endif
 	handlersCount++;
 	return FUNC_RESULT_SUCCESS;

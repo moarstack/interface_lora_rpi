@@ -402,6 +402,7 @@ bool Init_LORA(LORA_Settings_T* settings){
 #endif
 	loraSettings = settings;
 	RFM9X_Init(&(settings->RFM9X_Settings));
+	DEBUGOUT("LORA RESET\n");
 	RFM9X_Reset();
 	res &= Init_LORA_Mode(settings);
 	res &= Init_LORA_PaConfig(settings);

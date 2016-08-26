@@ -5,12 +5,24 @@
  *      Author: svalov
  */
 
+#include <rfm9x.h>
 #include "settings.h"
 #include "loraSettings.h"
 #include "ifaceSettings.h"
 #include "interface.h"
+#include <hwConfig.h>
+
+void Init_RFM9XSettings(RFM9X_Settings_T* settings)
+{
+	settings->spiSpeed = SPI_SPEED;
+	settings->spiChannel = SPI_CHANNEL;
+	settings->resetPin = RESET_PIN;
+	settings->resetPort = RESET_PORT;
+	settings->useReset = true;
+}
 
 void Init_LORASettings(LORA_Settings_T* settings){
+	Init_RFM9XSettings(&(settings->RFM9X_Settings));
 	settings->MinFrequency = MIN_FREQUENCY;
 	settings->MaxFrequency = MAX_FREQUENCY;
 	settings->MinChannelBandWidth = MIN_CHANNEL_BANDWIDTH;

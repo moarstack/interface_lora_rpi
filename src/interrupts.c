@@ -5,7 +5,7 @@
  *      Author: svalov
  */
 #include "interrupts.h"
-
+#include <stdio.h>
 void interuptHandler(uint8_t port, uint8_t pin){
 	RFM9X_DIO_T dio = -1;
 #ifdef DIO0_ENABLE
@@ -26,6 +26,7 @@ void interuptHandler(uint8_t port, uint8_t pin){
 #ifdef DIO5_ENABLE
 	if(port == DIO5_PORT && pin == DIO5_PIN) dio = RFM9X_DIO5;
 #endif
+	printf("Interrupt %d\n",dio);
 	INTERRUPT_HANDLER(dio);
 }
 

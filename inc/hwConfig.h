@@ -8,7 +8,7 @@
 #ifndef HWCONFIG_H_
 #define HWCONFIG_H_
 
-//#define ENABLE_IO
+#define ENABLE_IO
 
 #define  SPI_CHANNEL  0
 #define  SPI_SPEED 	  1000000
