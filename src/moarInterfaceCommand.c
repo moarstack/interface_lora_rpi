@@ -44,8 +44,31 @@ int processRegResultCommand(void* layerRef, int fd, LayerCommandStruct_T* comman
 	ChannelRegisterResultMetadata_T* regResult = (ChannelRegisterResultMetadata_T*)command->MetaData;
 	layer->Registred = regResult;
 	return FUNC_RESULT_SUCCESS;
+
 }
 
+int processIfaceReceived(LoraIfaceLayer_T* layer, IfaceAddr_T* address, void* payload, PayloadSize_T size){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == address)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == payload)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(0 == size)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	IfaceReceiveMetadata_T* metadata = {0};
+	metadata->From = *address;
+	midGenerate(&(metadata->Id), MoarLayer_Interface);
+	LayerCommandStruct_T command = {0};
+	command.Command = LayerCommandType_Receive;
+	command.MetaSize = sizeof(IfaceReceiveMetadata_T);
+	command.MetaData = &metadata;
+	command.Data = payload;
+	command.DataSize = size;
+	int res = WriteCommand(layer->ChannelSocket,&command);
+	return res;
+}
 int processIfaceReceived(LoraIfaceLayer_T* layer, IfaceAddr_T* address, void* payload, PayloadSize_T size){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
