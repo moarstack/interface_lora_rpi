@@ -45,8 +45,8 @@ int notifyChannel(LoraIfaceLayer_T* layer, LayerCommandType_T type, IfaceAddr_T*
 int neighborsInit(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	hashInit(&(layer->Neighbors),addressHash,NEIGHBORS_TABLE_SIZE , sizeof(IfaceAddr_T), sizeof(NeighborInfo_T));
-	return FUNC_RESULT_SUCCESS;
+	int res = hashInit(&(layer->Neighbors),addressHash, NEIGHBORS_TABLE_SIZE , sizeof(IfaceAddr_T), sizeof(NeighborInfo_T));
+	return res;
 }
 int neighborsAdd(LoraIfaceLayer_T* layer, NeighborInfo_T* neighbor, void* payload, PayloadSize_T size){
 	if(NULL == layer)
