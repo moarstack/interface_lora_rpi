@@ -40,6 +40,7 @@ typedef struct{
 	uint8_t 				ListeningChannel;
 	uint16_t 				ListeningSeed;
 	hashTable_T				Neighbors;
+	bool 					Busy;
 }LoraIfaceLayer_T;
 
 #pragma pack(push, 1)
