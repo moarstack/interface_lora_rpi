@@ -109,7 +109,7 @@ void enqueueUpstreamMessage(RouteMsgDown_T message){
 int8_t findNeighbor(IfaceAddr_T addr){
 	uint8_t i = 0;
 	for(;i<neighborsCount;i++){
-		if(neighbors[i].Address==addr)
+		//if(neighbors[i].Address==addr)
 			return i;
 	}
 	return -1;
@@ -258,11 +258,11 @@ void enqueueResponse(IfaceHeader_T* header, CRCvalue_T crc){
 	response->FullMessageCrc = crc_full;
 	response->NormalMessageCrc = crc;
 	//add to queue
-	RouteMsgDown_T message;
-	message.Pack = data;
-	message.Size = respHeader->Size;
-	message.State = PackState_prepared;
-	message.Bridge = header->From;
+//	RouteMsgDown_T message;
+//	message.Pack = data;
+//	message.Size = respHeader->Size;
+//	message.State = PackState_prepared;
+//	message.Bridge = header->From;
 	//add to queue
 //	QueuedecWriteToFront(QName_routedown,&message);
 }
@@ -329,7 +329,7 @@ void processMessage(RxData_T* data){
 				waitingResponseResetTime = INFINITY_TIME;
 				//send ok to routing
 				currentMessage.State = PackState_responsed;
-				updateLastTrys(currentMessage.Bridge, true);
+				//updateLastTrys(currentMessage.Bridge, true);
 				enqueueUpstreamMessage(currentMessage);
 			}
 		}
@@ -360,7 +360,8 @@ void processMessage(RxData_T* data){
 			} DEBUGOUT("\n");
 #endif
 			//check address or beacon
-			if(header->Beacon || (header->To == nodeAddress) && !monitorMode){
+			//if(header->Beacon || (header->To == nodeAddress) && !monitorMode)
+			{
 				reallocateData(data);
 				if(data->Pointer){
 					IfaceMsgUp_T message;
@@ -451,7 +452,8 @@ uint16_t calcTimeout(uint16_t size)
 void sendMessageFromQueue(){
 	//prepare
 //	QueuedecRead(QName_routedown,&currentMessage);
-	int8_t index = findNeighbor(currentMessage.Bridge);
+	int8_t index;
+	// = findNeighbor(currentMessage.Bridge);
 	IfaceHeader_T* header = Iface_startHeader( currentMessage.Pack );
 	//if no neighbor with same address
 	if(index ==-1){
@@ -476,7 +478,7 @@ void sendMessageFromQueue(){
 		header->Response = 0;
 		header->NeedResponse = ifaceSettings->DataNeedResponse;
 		header->From = nodeAddress;
-		header->To = currentMessage.Bridge;
+		//header->To = currentMessage.Bridge;
 		header->Size = currentMessage.Size;
 		currentMessage.State = PackState_prepared;
 	}
@@ -613,7 +615,7 @@ void Interface_MainTaskLoop(void *pvParameters){
 			waitingResponseResetTime = INFINITY_TIME;
 			//
 			//change neighbor info
-			updateLastTrys(currentMessage.Bridge, false);
+			//updateLastTrys(currentMessage.Bridge, false);
 			//if no trys left
 			currentMessage.State = PackState_timeouted;
 			enqueueUpstreamMessage(currentMessage);

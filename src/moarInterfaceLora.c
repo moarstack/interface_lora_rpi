@@ -8,9 +8,10 @@
 #include <moarInterfaceLoraPrivate.h>
 #include <moarInterfaceCommand.h>
 #include <moarCommons.h>
+#include <wiringPi.h>
 #include "moarLayerEntryPoint.h"
-
-
+#include <settings.h>
+#include <loraInterface.h>
 
 int initEpoll(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
@@ -87,6 +88,10 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 		return NULL;
 	}
 	// load configuration
+	// init settings
+	Init_IfaceSettings(&(layer.Settings));
+	// init internal interface
+	int ifaceRes = interfaceInit(&layer);
 	// init epoll
 	int epollInitRes = initEpoll(&layer);
 	if(FUNC_RESULT_SUCCESS != epollInitRes)
@@ -121,7 +126,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 				// return NULL;
 			}
 		}
-		//timeout | end of command processing
+		int stateProcess = stateProcessing(&layer);
 
 	}
 	return NULL;

@@ -7,6 +7,8 @@
 
 #include "../inc/lora.h"
 
+#define inline
+
 static fhssFreqRequest freqRequest=0;
 static irqHandler IrqHandler=0;
 static onRxDoneHandler rxDoneHandler=0;

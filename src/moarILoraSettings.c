@@ -5,12 +5,24 @@
  *      Author: svalov
  */
 
+#include <rfm9x.h>
 #include "settings.h"
 #include "loraSettings.h"
 #include "ifaceSettings.h"
 #include "interface.h"
+#include <hwConfig.h>
 
-inline void Init_LORASettings(LORA_Settings_T* settings){
+void Init_RFM9XSettings(RFM9X_Settings_T* settings)
+{
+	settings->spiSpeed = SPI_SPEED;
+	settings->spiChannel = SPI_CHANNEL;
+	settings->resetPin = RESET_PIN;
+	settings->resetPort = RESET_PORT;
+	settings->useReset = true;
+}
+
+void Init_LORASettings(LORA_Settings_T* settings){
+	Init_RFM9XSettings(&(settings->RFM9X_Settings));
 	settings->MinFrequency = MIN_FREQUENCY;
 	settings->MaxFrequency = MAX_FREQUENCY;
 	settings->MinChannelBandWidth = MIN_CHANNEL_BANDWIDTH;
@@ -31,7 +43,7 @@ inline void Init_LORASettings(LORA_Settings_T* settings){
 	settings->RxPayloadCRC = LORA_RXPAYLOADCRC;
 }
 
-inline void Init_IfaceSettings(IfaceSettings_T* settings){
+void Init_IfaceSettings(IfaceSettings_T* settings){
 	Init_LORASettings(&(settings->LORA_Settings));
 
 	settings->DataTxPower = LORA_OUTPUTPOWER;
@@ -48,7 +60,6 @@ inline void Init_IfaceSettings(IfaceSettings_T* settings){
 	settings->BeaconSeed = BEACON_SEED;
 	settings->MonitorChannel = BEACON_CHANNEL;
 	settings->MonitorSeed = BEACON_SEED;
-	settings->BeaconAddress = BEACON_DEFAULT_ADDRESS;
 	settings->BeaconDefaultPayloadSize = BEACON_DEFAULT_PAYLOAD_SIZE;
 	settings->BeaconSendInterval = BEACON_SEND_INTERVAL;
 	settings->BeaconSendDeviation = BEACON_SEND_DEVIATION;

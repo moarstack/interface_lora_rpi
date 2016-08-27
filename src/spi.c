@@ -8,23 +8,29 @@
 #include "spi.h"
 #include <stdint.h>
 #include <stddef.h>
-
-
-void* gpioPort = NULL;
-uint8_t csPort;
-uint8_t csPin;
+#include <wiringPi.h>
+#include <wiringPiSPI.h>
+#include <string.h>
+#include <hwConfig.h>
+static int spiChannel = 0;
 
 //init
-void SPI_Init(void *port)
+void SPI_Init(int channel, int speed)
 {
-
+#ifdef ENABLE_IO
+	spiChannel = channel;
+	int spiRes = wiringPiSPISetup(channel, speed);
+#endif
 }
 //send
-void SPI_RW_Data(void *port, uint8_t *tx, uint8_t *rx, uint8_t count){
-
+void SPI_RW_Data(int channel, uint8_t *tx, uint8_t *rx, uint8_t count){
+#ifdef ENABLE_IO
+	memcpy(rx,tx,count);
+	int res = wiringPiSPIDataRW(channel, rx, count);
+#endif
 }
 
-void SPI_DeInit(void *port){
-
+void SPI_DeInit(int channel){
+	// no such function
 }
 

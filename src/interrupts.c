@@ -36,16 +36,16 @@ void Init_interupts(){
 	Int_Init(interuptHandler);
 	//ifdef
 #ifdef DIO0_ENABLE
-	//Int_AddPinInt(DIO0_PORT,DIO0_PIN,IOCON_MODE_INACT,Level_High,Mode_Edge);
+	Int_AddPinInt(DIO0_PORT,DIO0_PIN,0,Level_High,Mode_Edge);
 #endif
 #ifdef DIO1_ENABLE
-	//Int_AddPinInt(DIO1_PORT,DIO1_PIN,IOCON_MODE_INACT,Level_High,Mode_Edge);
+	Int_AddPinInt(DIO1_PORT,DIO1_PIN,0,Level_High,Mode_Edge);
 #endif
 #ifdef DIO2_ENABLE
-	//Int_AddPinInt(DIO2_PORT,DIO2_PIN,IOCON_MODE_INACT,Level_High,Mode_Edge);
+	Int_AddPinInt(DIO2_PORT,DIO2_PIN,0,Level_High,Mode_Edge);
 #endif
 #ifdef DIO3_ENABLE
-	//Int_AddPinInt(DIO3_PORT,DIO3_PIN,IOCON_MODE_INACT,Level_High,Mode_Edge);
+	Int_AddPinInt(DIO3_PORT,DIO3_PIN,0,Level_High,Mode_Edge);
 #endif
 #ifdef DIO4_ENABLE
 	Int_AddPinInt(DIO4_PORT,DIO4_PIN,IOCON_MODE_INACT,Level_High,Mode_Edge);

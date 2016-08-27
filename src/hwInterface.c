@@ -10,11 +10,17 @@
 #include "stdfunc.h"
 #include "string.h"
 
+#define inline
+
 #define LORA_HEADER_OVERHEAD 4
 #define LORA_CRC_OVERHEAD 2
 #define LORA_PREAMBLE_CONST_OVERHEAD 5
 #define LORA_MESSAGE_OVERHEAD (LORA_HEADER_OVERHEAD + LORA_CRC_OVERHEAD + LORA_PREAMBLE_CONST_OVERHEAD)
-
+#define DEBUGOUT printf
+#define DEBUG_LEVEL0
+#define DEBUG_LEVEL1
+#define DEBUG_LEVEL2
+#define DEBUG_LEVEL3
 
 //can be replaced by on fly generation
 uint8_t* channelsTable = NULL;
