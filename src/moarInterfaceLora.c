@@ -103,7 +103,6 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 		return NULL;
 	// enable process
 	layer.Running = true;
-	layer.Busy = true;
 	while(layer.Running) {
 		if(!layer.Busy) {
 			// in poll
