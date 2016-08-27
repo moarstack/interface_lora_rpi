@@ -75,24 +75,6 @@ uint8_t neighborsCount=0;
 IfaceSettings_T* ifaceSettings = NULL;
 
 
-// returns place in packet where iface header starts
-inline IfaceHeader_T * Iface_startHeader( Packet_T packet )
-{
-	return packet + IfaceHeaderStart;
-}
-
-// returns place in packet where iface payload starts
-inline Packet_T	Iface_startPayload( Packet_T packet )
-{
-	return packet + IfacePayloadStart;
-}
-
-// returns place in packet where iface footer starts
-inline IfaceFooter_T * Iface_startFooter( Packet_T packet )
-{
-	return Iface_startPayload( packet ) + Iface_startHeader( packet )->Size;
-}
-
 void enqueueUpstreamMessage(RouteMsgDown_T message){
 	IfaceMsgUp_T upMessage;
 	upMessage.Pack = message.Pack;

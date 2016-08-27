@@ -8,6 +8,7 @@
 #include <moarInterfaceLoraPrivate.h>
 
 int interfaceInit(LoraIfaceLayer_T* layer);
-int stateProcessing(LoraIfaceLayer_T* layer);
+int interfaceMakeBeacon(LoraIfaceLayer_T* layer, void* payload, PayloadSize_T size);
+int interfaceStateProcessing(LoraIfaceLayer_T* layer);
 
 #endif //MOARSTACK_LORAINTERFACE_H

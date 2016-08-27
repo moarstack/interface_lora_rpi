@@ -35,6 +35,9 @@ typedef struct{
 	SocketFilepath_T 		ChannelSocketPath;
 	IfaceAddr_T				LocalAddress;
 	IfaceSettings_T			Settings;
+	void* 					BeaconData;
+	uint8_t 				ListeningChannel;
+	uint16_t 				ListeningSeed;
 }LoraIfaceLayer_T;
 
 #pragma pack(push, 1)

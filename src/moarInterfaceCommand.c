@@ -6,6 +6,7 @@
 #include <moarInterfaceLoraPrivate.h>
 #include <moarInterfaceCommand.h>
 #include <moarCommons.h>
+#include <loraInterface.h>
 
 int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
 	if(NULL == layerRef)
@@ -27,8 +28,8 @@ int processBeaconUpdateCommand(void* layerRef, int fd, LayerCommandStruct_T* com
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	LoraIfaceLayer_T* layer = (LoraIfaceLayer_T*)layerRef;
-	//logic here
-	return FUNC_RESULT_SUCCESS;
+	int res = interfaceMakeBeacon(layer, command->Data, command->DataSize);
+	return res;
 }
 
 int processRegResultCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
