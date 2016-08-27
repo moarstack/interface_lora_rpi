@@ -1,7 +1,7 @@
 //
 // Created by svalov, kryvashek on 05.07.16.
 //
-
+#define _GNU_SOURCE
 #include <funcResults.h>
 #include <moarInterface.h>
 #include <string.h>
@@ -10,8 +10,9 @@
 #include "moarLayerEntryPoint.h"
 #include <settings.h>
 #include <loraInterface.h>
-
-
+#include <poll.h>
+#include <signal.h>
+#include <stdio.h>
 
 int initEpoll(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
@@ -102,6 +103,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 		return NULL;
 	// enable process
 	layer.Running = true;
+	layer.Busy = true;
 	while(layer.Running) {
 		if(!layer.Busy) {
 			// in poll
@@ -130,7 +132,13 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 		}
 		else{
 			// wait timeout or signal here
-
+			sigset_t mask;
+			struct timespec timeout;
+			sigemptyset (&mask);
+			sigaddset(&mask,SIGUSR1);
+			timeout.tv_sec = layer.EpollTimeout/1000;
+			timeout.tv_nsec = (layer.EpollTimeout-timeout.tv_sec*1000)*1000000;
+			int res = sigtimedwait(&mask, NULL, &timeout);
 		}
 		int stateProcess = interfaceStateProcessing(&layer);
 
