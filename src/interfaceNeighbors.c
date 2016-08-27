@@ -9,37 +9,12 @@
 #include <interfaceNeighbors.h>
 #include <moarInterfaceLoraPrivate.h>
 #include <moarCommons.h>
+#include <moarInterfaceCommand.h>
 
 #define HASH_CONST	0xf2e143
 
 uint32_t addressHash(void* addr, size_t size){
 	return hashBytesEx(addr, size, HASH_CONST);
-}
-
-int notifyChannel(LoraIfaceLayer_T* layer, LayerCommandType_T type, IfaceAddr_T* addr, void* payload, PayloadSize_T size){
-	if(NULL == layer)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(LayerCommandType_LostNeighbor != type &&
-			LayerCommandType_NewNeighbor != type &&
-			LayerCommandType_UpdateNeighbor != type)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(NULL == addr)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	if(NULL == payload | 0 == size){
-		payload = NULL;
-		size = 0;
-	}
-	IfaceNeighborMetadata_T metadata = {0};
-	metadata.Neighbor = *addr;
-	LayerCommandStruct_T command = {0};
-	command.Command = type;
-	command.Data = payload;
-	command.DataSize = size;
-	command.MetaData = &metadata;
-	command.MetaSize = sizeof(IfaceNeighborMetadata_T);
-	int res = WriteCommand(layer->ChannelSocket, &command);
-	return res;
 }
 
 int neighborsInit(LoraIfaceLayer_T* layer){
@@ -53,7 +28,7 @@ int neighborsAdd(LoraIfaceLayer_T* layer, NeighborInfo_T* neighbor, void* payloa
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == neighbor)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	int notifyRes = notifyChannel(layer, LayerCommandType_NewNeighbor, &(neighbor->Address), payload, size);
+	int notifyRes = processIfaceNeighbors(layer, LayerCommandType_NewNeighbor, &(neighbor->Address), payload, size);
 	int res = hashAdd(&(layer->Neighbors),&(neighbor->Address), neighbor);
 	return res;
 }
@@ -69,7 +44,7 @@ int neighborsUpdate(LoraIfaceLayer_T* layer, NeighborInfo_T* neighbor, void* pay
 		return res;
 	}
 	*stored = *neighbor;
-	int notifyRes = notifyChannel(layer, LayerCommandType_UpdateNeighbor, &(neighbor->Address), payload, size);
+	int notifyRes = processIfaceNeighbors(layer, LayerCommandType_UpdateNeighbor, &(neighbor->Address), payload, size);
 	return FUNC_RESULT_SUCCESS;
 }
 int neighborsGet(LoraIfaceLayer_T* layer, IfaceAddr_T* addr, NeighborInfo_T* neighbor){
@@ -88,7 +63,7 @@ int neighborsRemove(LoraIfaceLayer_T* layer, IfaceAddr_T* addr){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == addr)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	int notifyRes = notifyChannel(layer, LayerCommandType_LostNeighbor, addr, NULL, 0);
+	int notifyRes = processIfaceNeighbors(layer, LayerCommandType_LostNeighbor, addr, NULL, 0);
 	int res = hashRemove(&(layer->Neighbors), addr);
 	return res;
 }

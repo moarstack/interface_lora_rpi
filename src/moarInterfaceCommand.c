@@ -44,3 +44,29 @@ int processRegResultCommand(void* layerRef, int fd, LayerCommandStruct_T* comman
 	layer->Registred = regResult;
 	return FUNC_RESULT_SUCCESS;
 }
+
+int processIfaceNeighbors(LoraIfaceLayer_T* layer, LayerCommandType_T type, IfaceAddr_T* addr, void* payload, PayloadSize_T size){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(LayerCommandType_LostNeighbor != type &&
+	   LayerCommandType_NewNeighbor != type &&
+	   LayerCommandType_UpdateNeighbor != type)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == addr)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	if(NULL == payload | 0 == size){
+		payload = NULL;
+		size = 0;
+	}
+	IfaceNeighborMetadata_T metadata = {0};
+	metadata.Neighbor = *addr;
+	LayerCommandStruct_T command = {0};
+	command.Command = type;
+	command.Data = payload;
+	command.DataSize = size;
+	command.MetaData = &metadata;
+	command.MetaSize = sizeof(IfaceNeighborMetadata_T);
+	int res = WriteCommand(layer->ChannelSocket, &command);
+	return res;
+}
