@@ -7,11 +7,11 @@
 #include <string.h>
 #include <moarInterfaceLoraPrivate.h>
 #include <moarInterfaceCommand.h>
-#include <moarCommons.h>
-#include <wiringPi.h>
 #include "moarLayerEntryPoint.h"
 #include <settings.h>
 #include <loraInterface.h>
+
+
 
 int initEpoll(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
@@ -103,28 +103,34 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	// enable process
 	layer.Running = true;
 	while(layer.Running) {
-		// in poll
-		int epollRes = epoll_wait(layer.EpollHandler, layer.EpollEvent,
-								  layer.EpollCount, layer.EpollTimeout);
-		// in poll
-		if(epollRes<0){
-			//perror("Routing epoll_wait");
+		if(!layer.Busy) {
+			// in poll
+			int epollRes = epoll_wait(layer.EpollHandler, layer.EpollEvent,
+									  layer.EpollCount, layer.EpollTimeout);
+			// in poll
+			if (epollRes < 0) {
+				//perror("Routing epoll_wait");
+			}
+			for (int i = 0; i < epollRes; i++) {
+				uint32_t event = layer.EpollEvent[i].events;
+				int fd = layer.EpollEvent[i].data.fd;
+				int processRes = FUNC_RESULT_FAILED;
+				if (fd == layer.ChannelSocket) {
+					processRes = ProcessCommand(&layer, fd, event, EPOLL_CHANNEL_EVENTS, layer.ChannelProcessingRules);
+				}
+				else {
+					// wtf? i don`t add another sockets
+				}
+				//error processing
+				if (FUNC_RESULT_SUCCESS != processRes) {
+					// we have problems
+					// return NULL;
+				}
+			}
 		}
-		for(int i=0; i<epollRes;i++) {
-			uint32_t event = layer.EpollEvent[i].events;
-			int fd = layer.EpollEvent[i].data.fd;
-			int processRes = FUNC_RESULT_FAILED;
-			if(fd == layer.ChannelSocket){
-				processRes = ProcessCommand(&layer, fd, event, EPOLL_CHANNEL_EVENTS, layer.ChannelProcessingRules);
-			}
-			else{
-				// wtf? i don`t add another sockets
-			}
-			//error processing
-			if(FUNC_RESULT_SUCCESS != processRes){
-				// we have problems
-				// return NULL;
-			}
+		else{
+			// wait timeout or signal here
+
 		}
 		int stateProcess = interfaceStateProcessing(&layer);
 
