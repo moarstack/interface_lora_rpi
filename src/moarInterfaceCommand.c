@@ -56,9 +56,9 @@ int processIfaceReceived(LoraIfaceLayer_T* layer, IfaceAddr_T* address, void* pa
 	if(0 == size)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	IfaceReceiveMetadata_T* metadata = {0};
-	metadata->From = *address;
-	midGenerate(&(metadata->Id), MoarLayer_Interface);
+	IfaceReceiveMetadata_T metadata = {0};
+	metadata.From = *address;
+	midGenerate(&(metadata.Id), MoarLayer_Interface);
 	LayerCommandStruct_T command = {0};
 	command.Command = LayerCommandType_Receive;
 	command.MetaSize = sizeof(IfaceReceiveMetadata_T);
