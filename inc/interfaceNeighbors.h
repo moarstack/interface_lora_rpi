@@ -20,11 +20,10 @@ typedef struct{
 } NeighborInfo_T;
 
 int neighborsInit(LoraIfaceLayer_T* layer);
-int neighborsAdd(LoraIfaceLayer_T* layer, NeighborInfo_T* neighbor);
-int neighborsUpdate(LoraIfaceLayer_T* layer, NeighborInfo_T* neighbor);
+int neighborsAdd(LoraIfaceLayer_T* layer, NeighborInfo_T* neighbor, void* payload, PayloadSize_T size);
+int neighborsUpdate(LoraIfaceLayer_T* layer, NeighborInfo_T* neighbor, void* payload, PayloadSize_T size);
 int neighborsGet(LoraIfaceLayer_T* layer, IfaceAddr_T* addr, NeighborInfo_T* neighbor);
 int neighborsRemove(LoraIfaceLayer_T* layer, IfaceAddr_T* addr);
 int neighborsUpdateSendtrys(LoraIfaceLayer_T* layer, IfaceAddr_T* addr, bool responded);
-int neighborsUpdateLastSeen(LoraIfaceLayer_T* layer, IfaceAddr_T* addr);
 
 #endif //MOARSTACK_INTERFACENEIGHBORS_H
