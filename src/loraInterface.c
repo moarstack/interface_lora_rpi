@@ -77,8 +77,10 @@ int interfaceInit(LoraIfaceLayer_T* layer){
 //	if(!res)
 //		return FUNC_RESULT_FAILED;
 	// init neighbors here
+	int neighborsRes = neighborsInit(layer);
 	// create beacon packet here
-	interfaceMakeBeacon(layer, NULL, 0);
+	int beaconRes = interfaceMakeBeacon(layer, NULL, 0);
+
 	// reset interface state here
 	return FUNC_RESULT_SUCCESS;
 }
