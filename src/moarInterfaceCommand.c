@@ -92,6 +92,24 @@ int processIfaceReceived(LoraIfaceLayer_T* layer, IfaceAddr_T* address, void* pa
 	return res;
 }
 
+int processIfaceMsgState(LoraIfaceLayer_T* layer, MessageId_T* mid, IfacePackState_T state){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == mid)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	IfacePackStateMetadata_T metadata = {0};
+	metadata.Id = *mid;
+	metadata.State = state;
+	LayerCommandStruct_T command = {0};
+	command.Command = LayerCommandType_MessageState;
+	command.MetaSize = sizeof(IfacePackStateMetadata_T);
+	command.MetaData = &metadata;
+	command.Data = NULL;
+	command.DataSize = 0;
+	int res = WriteCommand(layer->ChannelSocket,&command);
+	return res;
+}
+
 int processIfaceNeighbors(LoraIfaceLayer_T* layer, LayerCommandType_T type, IfaceAddr_T* addr, void* payload, PayloadSize_T size){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
