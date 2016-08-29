@@ -10,9 +10,10 @@
 #include "moarLayerEntryPoint.h"
 #include <settings.h>
 #include <loraInterface.h>
-#include <poll.h>
 #include <signal.h>
 #include <stdio.h>
+#include <sys/signalfd.h>
+#include <unistd.h>
 
 int initEpoll(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
@@ -34,6 +35,15 @@ int initEpoll(LoraIfaceLayer_T* layer){
 	int channelRes = epoll_ctl(layer->EpollHandler, EPOLL_CTL_ADD, layer->ChannelSocket, &epollEventChannel);
 	if(0 != channelRes)
 		return FUNC_RESULT_FAILED;
+	//signals
+	struct epoll_event epollEventSignals;
+	epollEventSignals.events = EPOLL_CHANNEL_EVENTS;
+	epollEventSignals.data.fd = layer->SignalFd;
+	if(-1 == epollEventSignals.data.fd)
+		return FUNC_RESULT_FAILED;
+	int signalRes = epoll_ctl(layer->EpollHandler, EPOLL_CTL_ADD, epollEventSignals.data.fd , &epollEventSignals);
+	if(0 != signalRes)
+		return FUNC_RESULT_FAILED;
 	//return
 	return FUNC_RESULT_SUCCESS;
 }
@@ -42,7 +52,6 @@ int ifaceInit(LoraIfaceLayer_T* layer, void* arg){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == arg)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-
 	MoarIfaceStartupParams_T* params = (MoarIfaceStartupParams_T*)arg;
 	//setup socket to channel
 	if(NULL == params->socketToChannel)
@@ -59,6 +68,18 @@ int ifaceInit(LoraIfaceLayer_T* layer, void* arg){
 	layer->ChannelProcessingRules[1] = MakeProcessingRule(LayerCommandType_RegisterInterfaceResult, processRegResultCommand);
 	layer->ChannelProcessingRules[2] = MakeProcessingRule(LayerCommandType_UpdateBeaconPayload, processBeaconUpdateCommand);
 	layer->ChannelProcessingRules[3] = MakeProcessingRule(LayerCommandType_None, NULL);
+
+	//init signals
+	sigemptyset (&(layer->SignalMask));
+	sigaddset(&(layer->SignalMask),SIGUSR1);
+	int procRes = sigprocmask(SIG_BLOCK, &(layer->SignalMask),NULL);
+	if(0 != procRes)
+		return FUNC_RESULT_FAILED;
+	// init signal socket
+	layer->SignalFd = signalfd(-1,&(layer->SignalMask), 0);
+	if(-1 == layer->SignalFd)
+		return FUNC_RESULT_FAILED;
+
 	return FUNC_RESULT_SUCCESS;
 }
 
@@ -85,9 +106,8 @@ int registerInterface(LoraIfaceLayer_T* layer){
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	LoraIfaceLayer_T layer = {0};
 	int initRes = ifaceInit(&layer, arg);
-	if(FUNC_RESULT_SUCCESS != initRes){
+	if(FUNC_RESULT_SUCCESS != initRes)
 		return NULL;
-	}
 	// load configuration
 	// init settings
 	Init_IfaceSettings(&(layer.Settings));
@@ -103,23 +123,29 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 		return NULL;
 	// enable process
 	layer.Running = true;
+	//layer.Busy = true;
 	while(layer.Running) {
+		moarTime_T start = timeGetCurrent();
 		if(!layer.Busy) {
 			// in poll
-			int epollRes = epoll_wait(layer.EpollHandler, layer.EpollEvent,
-									  layer.EpollCount, layer.EpollTimeout);
+			int epollRes = epoll_pwait(layer.EpollHandler, layer.EpollEvent,
+									  layer.EpollCount, layer.EpollTimeout, &(layer.SignalMask));
+//			int epollRes = ppoll(&(layer.EpollDesc), layer.EpollCount, &(timeout), &(layer.EpollMask));
 			// in poll
 			if (epollRes < 0) {
 				//perror("Routing epoll_wait");
 			}
-			for (int i = 0; i < epollRes; i++) {
+			for(int i=0; i< epollRes; i++) {
 				uint32_t event = layer.EpollEvent[i].events;
 				int fd = layer.EpollEvent[i].data.fd;
 				int processRes = FUNC_RESULT_FAILED;
 				if (fd == layer.ChannelSocket) {
 					processRes = ProcessCommand(&layer, fd, event, EPOLL_CHANNEL_EVENTS, layer.ChannelProcessingRules);
 				}
-				else {
+				else if(fd == layer.SignalFd) { //signal here
+					struct signalfd_siginfo info;
+					ssize_t bytes = read(fd, &info, sizeof(info));
+				} else{
 					// wtf? i don`t add another sockets
 				}
 				//error processing
@@ -131,14 +157,12 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 		}
 		else{
 			// wait timeout or signal here
-			sigset_t mask;
 			struct timespec timeout;
-			sigemptyset (&mask);
-			sigaddset(&mask,SIGUSR1);
 			timeout.tv_sec = layer.EpollTimeout/1000;
-			timeout.tv_nsec = (layer.EpollTimeout-timeout.tv_sec*1000)*1000000;
-			int res = sigtimedwait(&mask, NULL, &timeout);
+			timeout.tv_nsec = (layer.EpollTimeout - timeout.tv_sec*1000)*1000000;
+			int res = sigtimedwait(&(layer.SignalMask), NULL, &(timeout));
 		}
+		printf("time %d\n",timeGetCurrent()-start);
 		int stateProcess = interfaceStateProcessing(&layer);
 
 	}

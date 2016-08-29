@@ -27,7 +27,6 @@
 #define DEBUG_LEVEL2
 #define DEBUG_LEVEL3
 
-#define INTERRUPT_SIGNAL SIGUSR1
 
 pthread_t thread = 0;
 //can be replaced by on fly generation
@@ -47,8 +46,6 @@ uint8_t channelsCount;
 uint32_t channelBandwidth;
 
 LORA_Settings_T* loraSettings;
-
-
 //init
 inline void freqDivisionInit(LORA_Settings_T* settings){
 	uint32_t realBandwidth = settings->MaxFrequency-settings->MinFrequency;
@@ -95,7 +92,7 @@ void RxDoneHandler(uint8_t *data, uint16_t size, int16_t rssi, LORA_RxMode_T mod
 		//set interface state
 		events.RxDone = 1;
 		interfaceState = InterfaceState_Busy;
-		// notify thread
+		// send signal
 		pthread_kill(thread, SIGUSR1);
 	}
 }
@@ -104,7 +101,7 @@ void TxDoneHandler(){
 	LORA_SwitchToStandby();
 	events.TxDone = 1;
 	interfaceState = InterfaceState_On;
-	// notify thread
+	// send signal
 	pthread_kill(thread, SIGUSR1);
 }
 void RxTimeoutHandler(){
@@ -112,15 +109,15 @@ void RxTimeoutHandler(){
 	LORA_SwitchToStandby();
 	events.RxTimeout = 1;
 	interfaceState = InterfaceState_On;
-	// notify thread
+	// send signal
 	pthread_kill(thread, SIGUSR1);
 }
 void CadDoneHandler(){
-	// notify thread
+	// send signal
 	pthread_kill(thread, SIGUSR1);
 }
 void CadDetectedHandler(){
-	// notify thread
+	// send signal
 	pthread_kill(thread, SIGUSR1);
 }
 void resetInterfaceState(){
@@ -412,6 +409,14 @@ inline bool Init_Frequency_Division(LORA_Settings_T* settings){
 	return true;
 }
 
+void* test(void* arg){
+	printf("start\n");
+	sleep(5);
+	printf("signal\n");
+	pthread_kill(thread, SIGUSR1);
+	printf("signaled\n");
+}
+
 //lora init
 bool Init_LORA(LORA_Settings_T* settings){
 	bool res = true;
@@ -434,5 +439,7 @@ bool Init_LORA(LORA_Settings_T* settings){
 	res &= Init_LORA_handlers(settings);
 	interfaceState = InterfaceState_On;
 	recievedData.Processed = 1;
+	pthread_t newthread;
+	pthread_create(&(newthread),NULL, test, NULL);
 	return res;
 }

@@ -5,14 +5,21 @@
 #ifndef MOARSTACK_MOARINTERFACEPRIVATE_H
 #define MOARSTACK_MOARINTERFACEPRIVATE_H
 
+#define _GNU_SOURCE
 #include <stdint.h>
 #include <stdbool.h>
 #include <moarInterfaceChannel.h>
 #include <sys/epoll.h>
+#include <signal.h>
+#include <poll.h>
+#include <moarTime.h>
+#include <time.h>
 
-#define EPOLL_SOCKETS_COUNT 				1
+#include <stdio.h>
+
+#define EPOLL_SOCKETS_COUNT 				2
 #define EPOLL_CHANNEL_EVENTS 				EPOLLIN
-#define EPOLL_TIMEOUT						1000
+#define EPOLL_TIMEOUT						10000
 #define EPOLL_EVENTS_COUNT					EPOLL_SOCKETS_COUNT
 #define CHANNEL_PROCESSING_RULES_COUNT		5
 #define IFACE_ADDR_SIZE						4
@@ -26,11 +33,13 @@ typedef struct {
 
 typedef struct{
 	int 					ChannelSocket;
+	int 					SignalFd;
 	int 					EpollHandler;
 	struct epoll_event 		EpollEvent[EPOLL_EVENTS_COUNT];
 	int 					EpollCount;
-	bool 					Running;
+	sigset_t				SignalMask;
 	int 					EpollTimeout;
+	bool 					Running;
 	bool 					Registred;
 	CommandProcessingRule_T ChannelProcessingRules[CHANNEL_PROCESSING_RULES_COUNT];
 	SocketFilepath_T 		ChannelSocketPath;

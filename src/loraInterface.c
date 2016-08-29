@@ -86,11 +86,27 @@ int interfaceInit(LoraIfaceLayer_T* layer){
 }
 
 // process message function here
+int processReceivedMessage(LoraIfaceLayer_T* layer, void* data, PayloadSize_T size){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == data || 0 == size)
+		return FUNC_RESULT_FAILED_ARGUMENT;
 
+	return FUNC_RESULT_SUCCESS;
+}
 
 int interfaceStateProcessing(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	//if timeouted
+
+	if(events.RxDone){
+
+	}
+	if(events.TxDone){
+
+	}
 
 	return FUNC_RESULT_SUCCESS;
 }
