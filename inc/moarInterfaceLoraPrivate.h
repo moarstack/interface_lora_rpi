@@ -30,6 +30,7 @@ typedef struct {
 
 #include <moarLoraSettings.h>
 #include <hashTable.h>
+#include <moarIfaceStructs.h>
 
 typedef struct{
 	// layer logic
@@ -70,6 +71,10 @@ typedef struct{
 	moarTime_T 				TransmitStartTime;
 	// other
 	uint16_t				NetSpeed;
+	// current message
+	CRCvalue_T 				CurrentCRC;
+	CRCvalue_T 				CurrentFullCRC;
+	MessageId_T				CurrentMid;
 }LoraIfaceLayer_T;
 
 #pragma pack(push, 1)

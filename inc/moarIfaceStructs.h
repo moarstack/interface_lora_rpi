@@ -39,7 +39,7 @@ typedef struct
 // type for usual iface header
 typedef struct{
 	IfaceAddr_T		To,			// receiver of packet
-			From;		// sender of packet
+					From;		// sender of packet
 	CRCvalue_T		CRC;		// CRC summ of current packet (assuming part of From field instead of CRC bytes while calculating them)
 	PowerTx_T		TxPower;		// power level of packet transmitting
 	PackType_T		Beacon:1;	// type of the packet: normal (0) / beacon (1)

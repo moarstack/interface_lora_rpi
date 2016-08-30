@@ -15,6 +15,9 @@
 #include <string.h>
 #include <crc16.h>
 #include <hashTable.h>
+#include <moarInterfaceCommand.h>
+#include <moarIfaceStructs.h>
+#include <interfaceNeighbors.h>
 
 // returns place in packet where iface header starts
 IfaceHeader_T * Iface_startHeader( Packet_T packet )
@@ -111,8 +114,7 @@ CRCvalue_T calcPacketCrc(IfaceHeader_T* packet, bool override){
 	return value;
 }
 
-uint16_t calcTimeout(LoraIfaceLayer_T* layer, uint16_t size)
-{
+uint16_t calcTimeout(LoraIfaceLayer_T* layer, uint16_t size){
 	if(layer->NetSpeed > 0)
 		return ((((uint32_t)size+constantMessageOverhead)*1000) / layer->NetSpeed )*layer->Settings.TxTimeoutCoef;
 	else
@@ -120,7 +122,8 @@ uint16_t calcTimeout(LoraIfaceLayer_T* layer, uint16_t size)
 }
 
 IfaceListenChannel_T startListen(LoraIfaceLayer_T* layer){
-
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(layer->MonitorMode){
 		startRx(layer->Settings.MonitorChannel, layer->Settings.MonitorSeed);
 		return ListenChannel_Monitor;
@@ -196,7 +199,8 @@ int sendBeacon(LoraIfaceLayer_T* layer){
 	layer->Busy = true;
 	return FUNC_RESULT_SUCCESS;
 }
-int sendData(LoraIfaceLayer_T* layer, IfaceAddr_T* dest, MessageId_T* mid, bool needResponse, void* data, PayloadSize_T size){
+int sendData(LoraIfaceLayer_T* layer, IfaceAddr_T* dest, MessageId_T* mid, bool needResponse, bool isResponse,
+			 void* data, PayloadSize_T size, bool notifyChannel){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == dest)
@@ -207,11 +211,55 @@ int sendData(LoraIfaceLayer_T* layer, IfaceAddr_T* dest, MessageId_T* mid, bool 
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	// find neighbor
+	NeighborInfo_T neighbor;
+	int neighborRes = neighborsGet(layer,dest,&neighbor);
 	// if not found send error
+	if(FUNC_RESULT_SUCCESS != neighborRes){
+		if(notifyChannel){
+			// result? what result?
+			int notifyRes = processIfaceMsgState(layer,mid, IfacePackState_UnknownDest);
+		}
+		return FUNC_RESULT_FAILED;
+	}
+	// set mid
+	layer->CurrentMid = *mid;
+	// prepare ifac
+	resetInterfaceState();
+	int8_t power = setPower(layer->Settings.DataTxPower, layer->Settings.DataTxBoost);
 	// prepare message
-	// start tx
-	// set up flags
+	uint8_t* fullData = malloc(SzIfaceHeader + size);
+	if(NULL == fullData){
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	}
+	memcpy(Iface_startPayload(fullData), data, size);
+	IfaceHeader_T* header = Iface_startHeader(fullData);
 
+	header->Beacon = 0;
+	header->Response = (PackType_T)(isResponse?1:0);
+	header->NeedResponse = (PackType_T)(needResponse?1:0);
+	header->From = layer->LocalAddress;
+	header->To = *dest;
+	header->Size = (SizePayload_T)size;
+	header->TxPower = power;
+
+	//crc calc
+	layer->CurrentCRC = calcPacketCrc(header,true);
+	header->CRC = layer->CurrentCRC;
+	layer->CurrentFullCRC = calcPacketCrc(header,false);
+	// start tx
+	startTx(neighbor.Frequency, neighbor.Seed, fullData, SzIfaceHeader + size);
+	// set up flags
+	layer->TransmitStartTime = timeGetCurrent();
+	layer->TransmitResetTimeout = calcTimeout(layer, SzIfaceHeader + size);
+	layer->WaitingResponse = needResponse;
+	// free data
+	free(fullData);
+	// notify channel
+	if(notifyChannel && needResponse){
+		// result? what result?
+		int notifyRes = processIfaceMsgState(layer,mid, IfacePackState_Sent);
+	}
+	layer->Busy = true;
 	return FUNC_RESULT_SUCCESS;
 }
 
@@ -243,7 +291,7 @@ int interfaceStateProcessing(LoraIfaceLayer_T* layer){
 		// set timeout value
 	}
 	// if interface is still free
-	if()
+
 	//send beacons
 
 	return FUNC_RESULT_SUCCESS;
