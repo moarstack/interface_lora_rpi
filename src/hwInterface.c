@@ -413,7 +413,8 @@ void* test(void* arg){
 	printf("start\n");
 	sleep(5);
 	printf("signal\n");
-	pthread_kill(thread, SIGUSR1);
+	//pthread_kill(thread, SIGUSR1);
+	TxDoneHandler();
 	printf("signaled\n");
 }
 

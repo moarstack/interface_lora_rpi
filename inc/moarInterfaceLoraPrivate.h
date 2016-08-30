@@ -19,7 +19,7 @@
 
 #define EPOLL_SOCKETS_COUNT 				2
 #define EPOLL_CHANNEL_EVENTS 				EPOLLIN
-#define EPOLL_TIMEOUT						10000
+#define EPOLL_TIMEOUT						1000
 #define EPOLL_EVENTS_COUNT					EPOLL_SOCKETS_COUNT
 #define CHANNEL_PROCESSING_RULES_COUNT		5
 #define IFACE_ADDR_SIZE						4
@@ -69,6 +69,7 @@ typedef struct{
 	moarTime_T 				ListenBeaconStart;
 	moarTime_T 				TransmitResetTimeout;
 	moarTime_T 				TransmitStartTime;
+	moarTime_T				BeaconSendInterval;
 	// other
 	uint16_t				NetSpeed;
 	// current message

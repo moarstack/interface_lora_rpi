@@ -85,7 +85,8 @@ int interfaceInit(LoraIfaceLayer_T* layer){
 	int neighborsRes = neighborsInit(layer);
 	// create beacon packet here
 	int beaconRes = interfaceMakeBeacon(layer, NULL, 0);
-
+	layer->StartupTime = timeGetCurrent();
+	layer->BeaconSendInterval = layer->Settings.BeaconSendInterval;
 	// reset interface state here
 	return FUNC_RESULT_SUCCESS;
 }
@@ -181,24 +182,19 @@ int sendBeacon(LoraIfaceLayer_T* layer){
 	//set min sensetivity
 	IfaceFooter_T* beaconFooter = Iface_startFooter( layer->BeaconData );
 	beaconFooter->MinSensitivity = minSensetivity; //TODO fix
+
 	//crc
 	CRCvalue_T val = calcPacketCrc(beaconHeader,true);
 	beaconHeader->CRC = val;
-#ifdef DEBUG_LEVEL1
-	DEBUGOUT("Sending beacon %d\n",sentBeaconCounter++);
-#endif
-
 	layer->TransmitResetTimeout = calcTimeout(layer, layer->BeaconDataSize);
-
-#ifdef DEBUG_LEVEL3
-	DEBUGOUT("Setting timeout to %d\n",transmitResetTimeout);
-#endif
+	// send
 	startTx(layer->Settings.BeaconChannel, layer->Settings.BeaconSeed, layer->BeaconData, layer->BeaconDataSize);
 	layer->TransmitStartTime = timeGetCurrent();
 	layer->LastBeaconSent = timeGetCurrent();
 	layer->Busy = true;
 	return FUNC_RESULT_SUCCESS;
 }
+
 int sendData(LoraIfaceLayer_T* layer, IfaceAddr_T* dest, MessageId_T* mid, bool needResponse, bool isResponse,
 			 void* data, PayloadSize_T size, bool notifyChannel){
 	if(NULL == layer)
@@ -282,16 +278,26 @@ int interfaceStateProcessing(LoraIfaceLayer_T* layer){
 	if(events.RxDone){
 		resetInterfaceState();
 		processReceivedMessage(layer,&recievedData);
-		// if no need to transmit response
-		// reset busy flag
 		// try to listen
+		if(!layer->Busy){
+			startListen(layer);
+		}
 	}
 	if(events.TxDone){
-		// if waiting response
-		// set timeout value
+		if(!layer->WaitingResponse)
+			layer->Busy = false;
+		resetInterfaceState();
+		startListen(layer);
 	}
-	// if interface is still free
+	// if interface is still free and time to send beacons
+	if(!layer->Busy &&
+			timeCompare(timeGetDifference(timeGetCurrent(), layer->LastBeaconSent),layer->BeaconSendInterval)>0){
+		sendBeacon(layer);
+		printf("Sending beacon\n");
+//		if(currentTime> ifaceSettings->BeaconStartupDuration)
+//			beaconSendInterval = ifaceSettings->BeaconSendInterval + ((rand()%ifaceSettings->BeaconSendDeviation)-ifaceSettings->BeaconSendDeviation/2);
 
+	}
 	//send beacons
 
 	return FUNC_RESULT_SUCCESS;
