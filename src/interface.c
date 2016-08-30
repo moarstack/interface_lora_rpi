@@ -171,29 +171,29 @@ void reallocateData(RxData_T* recievedData){
 		memcpy( dynamicAllocated, staticAllocated, recievedData->Size );
 	recievedData->Pointer = dynamicAllocated;
 }
-//calculate crc, use override if need crc only for data+header
-CRCvalue_T calcPacketCrc(IfaceHeader_T* packet, bool override){
-	uint8_t* data = (uint8_t*)((void*)packet);
-	uint16_t length = SzIfaceHeader;
-	CRCvalue_T oldVal = packet->CRC;
-	//override old value
-	if(override)
-		packet->CRC = 0;
-	//data
-	length+=packet->Size;
-	//footer
-	if(packet->Beacon)
-		length+=SzIfaceFooter;
-	//limit max size
-	if(length>SzIfaceMaxPacket)
-		length = SzIfaceMaxPacket;
-	//calc
-	uint16_t value = crc16(data,length);
-	//return back
-	if(override)
-		packet->CRC = oldVal;
-	return value;
-}
+////calculate crc, use override if need crc only for data+header
+//CRCvalue_T calcPacketCrc(IfaceHeader_T* packet, bool override){
+//	uint8_t* data = (uint8_t*)((void*)packet);
+//	uint16_t length = SzIfaceHeader;
+//	CRCvalue_T oldVal = packet->CRC;
+//	//override old value
+//	if(override)
+//		packet->CRC = 0;
+//	//data
+//	length+=packet->Size;
+//	//footer
+//	if(packet->Beacon)
+//		length+=SzIfaceFooter;
+//	//limit max size
+//	if(length>SzIfaceMaxPacket)
+//		length = SzIfaceMaxPacket;
+//	//calc
+//	uint16_t value = crc16(data,length);
+//	//return back
+//	if(override)
+//		packet->CRC = oldVal;
+//	return value;
+//}
 
 void makeBeacon(uint8_t payloadSize, void * payload){
 	uint16_t size = SzIfaceHeader+payloadSize+SzIfaceFooter;
@@ -380,56 +380,56 @@ void processMessage(RxData_T* data){
 }
 
 
-IfaceListenChannel_T startListen(){
+//IfaceListenChannel_T startListen(){
+//
+//	if(monitorMode){
+//		startRx(ifaceSettings->MonitorChannel, ifaceSettings->MonitorSeed);
+//		return ListenChannel_Monitor;
+//	}
+//
+//	if((!waitingResponse && 	(neighborsCount==0 ||
+//			(currentTime-lastBeaconReceived> ifaceSettings->BeaconListenForce) ||
+//			(currentTime< ifaceSettings->BeaconListenStartup) ||
+//			(listenBeacon && (currentTime-listenBeaconStart < ifaceSettings->BeaconListenTimeout))))
+//	){
+//#ifdef DEBUG_LEVEL1
+//		DEBUGOUT("Listen for beacon 0x%02x\n",ifaceSettings->BeaconChannel);
+//#endif
+//
+//#ifdef DEBUG_LEVEL3
+//		if(neighborsCount==0)
+//			DEBUGOUT("No neighbors\n");
+//		if(currentTime-lastBeaconReceived>ifaceSettings->BeaconListenForce)
+//			DEBUGOUT("Time from last beacon %d > %d\n",(uint32_t)(currentTime-lastBeaconReceived),ifaceSettings->BeaconListenForce);
+//		if(currentTime<ifaceSettings->BeaconListenStartup)
+//			DEBUGOUT("Current time %d < %d\n",(uint32_t)currentTime,ifaceSettings->BeaconListenStartup);
+//		if(listenBeacon && (currentTime-listenBeaconStart<ifaceSettings->BeaconListenTimeout))
+//			DEBUGOUT("Listen beacon and listened for %d < %d\n",(uint32_t)(currentTime-listenBeaconStart),ifaceSettings->BeaconListenTimeout);
+//#endif
+//		if(!listenBeacon)
+//			listenBeaconStart = currentTime;
+//		listenBeacon = true;
+//		startRx(ifaceSettings->BeaconChannel, ifaceSettings->BeaconSeed);
+//		return ListenChannel_Beacon;
+//	}else{
+//#ifdef DEBUG_LEVEL1
+//		DEBUGOUT("Listen for data 0x%02x\n",listeningChannel);
+//#endif
+//		startup = false;
+//		listenBeaconStart = INFINITY_TIME;
+//		listenBeacon = false;
+//		startRx(listeningChannel,listeningSeed);
+//		return ListenChannel_Data;
+//	}
+//}
 
-	if(monitorMode){
-		startRx(ifaceSettings->MonitorChannel, ifaceSettings->MonitorSeed);
-		return ListenChannel_Monitor;
-	}
-
-	if((!waitingResponse && 	(neighborsCount==0 ||
-			(currentTime-lastBeaconReceived> ifaceSettings->BeaconListenForce) ||
-			(currentTime< ifaceSettings->BeaconListenStartup) ||
-			(listenBeacon && (currentTime-listenBeaconStart < ifaceSettings->BeaconListenTimeout))))
-	){
-#ifdef DEBUG_LEVEL1
-		DEBUGOUT("Listen for beacon 0x%02x\n",ifaceSettings->BeaconChannel);
-#endif
-
-#ifdef DEBUG_LEVEL3
-		if(neighborsCount==0)
-			DEBUGOUT("No neighbors\n");
-		if(currentTime-lastBeaconReceived>ifaceSettings->BeaconListenForce)
-			DEBUGOUT("Time from last beacon %d > %d\n",(uint32_t)(currentTime-lastBeaconReceived),ifaceSettings->BeaconListenForce);
-		if(currentTime<ifaceSettings->BeaconListenStartup)
-			DEBUGOUT("Current time %d < %d\n",(uint32_t)currentTime,ifaceSettings->BeaconListenStartup);
-		if(listenBeacon && (currentTime-listenBeaconStart<ifaceSettings->BeaconListenTimeout))
-			DEBUGOUT("Listen beacon and listened for %d < %d\n",(uint32_t)(currentTime-listenBeaconStart),ifaceSettings->BeaconListenTimeout);
-#endif
-		if(!listenBeacon)
-			listenBeaconStart = currentTime;
-		listenBeacon = true;
-		startRx(ifaceSettings->BeaconChannel, ifaceSettings->BeaconSeed);
-		return ListenChannel_Beacon;
-	}else{
-#ifdef DEBUG_LEVEL1
-		DEBUGOUT("Listen for data 0x%02x\n",listeningChannel);
-#endif
-		startup = false;
-		listenBeaconStart = INFINITY_TIME;
-		listenBeacon = false;
-		startRx(listeningChannel,listeningSeed);
-		return ListenChannel_Data;
-	}
-}
-
-uint16_t calcTimeout(uint16_t size)
-{
-	if(netSpeed>0)
-		return ((((uint32_t)size+constantMessageOverhead)*1000) / netSpeed)*ifaceSettings->TxTimeoutCoef;
-	else
-		return ifaceSettings->TransmitTimeout;
-}
+//uint16_t calcTimeout(uint16_t size)
+//{
+//	if(netSpeed>0)
+//		return ((((uint32_t)size+constantMessageOverhead)*1000) / netSpeed)*ifaceSettings->TxTimeoutCoef;
+//	else
+//		return ifaceSettings->TransmitTimeout;
+//}
 
 void sendMessageFromQueue(){
 	//prepare
@@ -511,38 +511,38 @@ void sendMessageFromQueue(){
 	lastIsBeacon = false;
 }
 
-void sendBeacon(){
-	//prepare
-	//calculate power
-	resetInterfaceState();
-	//set power
-	int8_t power = setPower(ifaceSettings->BeaconTxPower, ifaceSettings->BeaconTxBoost);
-	//set in beacon
-	IfaceHeader_T* beaconHeader = Iface_startHeader( beaconData );
-	beaconHeader->TxPower = power;
-	//set min sensetivity
-	IfaceFooter_T* beaconFooter = Iface_startFooter( beaconData );
-	beaconFooter->MinSensitivity = MAX(INT8_MIN,minSensetivity);
-	//crc
-	CRCvalue_T val = calcPacketCrc(beaconHeader,true);
-	beaconHeader->CRC = val;
-#ifdef DEBUG_LEVEL1
-	DEBUGOUT("Sending beacon %d\n",sentBeaconCounter++);
-#endif
-
-	currentMessageSize = SzIfaceHeader+beaconHeader->Size+SzIfaceFooter;
-
-	transmitResetTimeout = calcTimeout(currentMessageSize);
-
-#ifdef DEBUG_LEVEL3
-	DEBUGOUT("Setting timeout to %d\n",transmitResetTimeout);
-#endif
-	startTx(ifaceSettings->BeaconChannel, ifaceSettings->BeaconSeed, beaconData,currentMessageSize);
-	enableReset = true;
-	transmitStartTime = currentTime;
-	lastBeaconSent = currentTime;
-	lastIsBeacon = true;
-}
+//void sendBeacon(){
+//	//prepare
+//	//calculate power
+//	resetInterfaceState();
+//	//set power
+//	int8_t power = setPower(ifaceSettings->BeaconTxPower, ifaceSettings->BeaconTxBoost);
+//	//set in beacon
+//	IfaceHeader_T* beaconHeader = Iface_startHeader( beaconData );
+//	beaconHeader->TxPower = power;
+//	//set min sensetivity
+//	IfaceFooter_T* beaconFooter = Iface_startFooter( beaconData );
+//	beaconFooter->MinSensitivity = MAX(INT8_MIN,minSensetivity);
+//	//crc
+//	CRCvalue_T val = calcPacketCrc(beaconHeader,true);
+//	beaconHeader->CRC = val;
+//#ifdef DEBUG_LEVEL1
+//	DEBUGOUT("Sending beacon %d\n",sentBeaconCounter++);
+//#endif
+//
+//	currentMessageSize = SzIfaceHeader+beaconHeader->Size+SzIfaceFooter;
+//
+//	transmitResetTimeout = calcTimeout(currentMessageSize);
+//
+//#ifdef DEBUG_LEVEL3
+//	DEBUGOUT("Setting timeout to %d\n",transmitResetTimeout);
+//#endif
+//	startTx(ifaceSettings->BeaconChannel, ifaceSettings->BeaconSeed, beaconData,currentMessageSize);
+//	enableReset = true;
+//	transmitStartTime = currentTime;
+//	lastBeaconSent = currentTime;
+//	lastIsBeacon = true;
+//}
 void Interface_PreStart(){
 	resetInterfaceState();
 	startListen(0);
