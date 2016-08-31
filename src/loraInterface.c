@@ -321,8 +321,10 @@ int processReceivedMessage(LoraIfaceLayer_T* layer, RxData_T* data){
 		}
 		// if need response
 		if(header->NeedResponse){
-
-//			int responseRes = sendResponse(layer, header, val);
+			IfaceResponsePayload_T payload = {0};
+			payload.NormalMessageCrc = val;
+			payload.FullMessageCrc = calcPacketCrc(header,false);
+			int responseRes = sendData(layer, &(header->From), NULL, false, true, &payload, sizeof(payload), false);
 		}
 		// update neighbors
 		if(!layer->MonitorMode)
