@@ -86,3 +86,17 @@ int neighborsUpdateSendtrys(LoraIfaceLayer_T* layer, IfaceAddr_T* addr, bool res
 	}
 	return FUNC_RESULT_FAILED;
 }
+
+int neighborsUpdateLastSeen(LoraIfaceLayer_T* layer, IfaceAddr_T* addr, int16_t loss){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == addr)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	NeighborInfo_T* stored = hashGetPtr(&(layer->Neighbors),addr);
+	if(NULL != stored){
+		stored->LastSeen = timeGetCurrent();
+		stored->SignalLoss = loss;
+		return FUNC_RESULT_SUCCESS;
+	}
+	return FUNC_RESULT_FAILED;
+}
