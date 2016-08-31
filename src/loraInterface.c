@@ -20,20 +20,15 @@
 #include <interfaceNeighbors.h>
 
 // returns place in packet where iface header starts
-IfaceHeader_T * Iface_startHeader( Packet_T packet )
-{
+IfaceHeader_T * Iface_startHeader( Packet_T packet ){
 	return (IfaceHeader_T*)(packet + IfaceHeaderStart);
 }
-
 // returns place in packet where iface payload starts
-Packet_T	Iface_startPayload( Packet_T packet )
-{
+Packet_T	Iface_startPayload( Packet_T packet ){
 	return packet + IfacePayloadStart;
 }
-
 // returns place in packet where iface footer starts
-IfaceFooter_T * Iface_startFooter( Packet_T packet )
-{
+IfaceFooter_T * Iface_startFooter( Packet_T packet ){
 	return (IfaceFooter_T *)(Iface_startPayload( packet ) + Iface_startHeader( packet )->Size);
 }
 
@@ -68,7 +63,6 @@ int interfaceMakeBeacon(LoraIfaceLayer_T* layer, void* payload, PayloadSize_T si
 	}
 	return  FUNC_RESULT_SUCCESS;
 }
-
 int interfaceInit(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -114,6 +108,12 @@ CRCvalue_T calcPacketCrc(IfaceHeader_T* packet, bool override){
 		packet->CRC = oldVal;
 	return value;
 }
+uint16_t calcTimeout(LoraIfaceLayer_T* layer, uint16_t size){
+	if(layer->NetSpeed > 0)
+		return ((((uint32_t)size+constantMessageOverhead)*1000) / layer->NetSpeed )*layer->Settings.TxTimeoutCoef;
+	else
+		return layer->Settings.TransmitTimeout;
+}
 
 int updateNeighbors(LoraIfaceLayer_T* layer, IfaceHeader_T* header, int16_t rssi){
 	if(NULL == header)
@@ -140,13 +140,6 @@ int updateNeighbors(LoraIfaceLayer_T* layer, IfaceHeader_T* header, int16_t rssi
 		updateRes = neighborsUpdateLastSeen(layer, &(header->From), loss);
 	}
 	return updateRes;
-}
-
-uint16_t calcTimeout(LoraIfaceLayer_T* layer, uint16_t size){
-	if(layer->NetSpeed > 0)
-		return ((((uint32_t)size+constantMessageOverhead)*1000) / layer->NetSpeed )*layer->Settings.TxTimeoutCoef;
-	else
-		return layer->Settings.TransmitTimeout;
 }
 
 IfaceListenChannel_T startListen(LoraIfaceLayer_T* layer){
@@ -225,7 +218,6 @@ int sendBeacon(LoraIfaceLayer_T* layer){
 	layer->Busy = true;
 	return FUNC_RESULT_SUCCESS;
 }
-
 int sendData(LoraIfaceLayer_T* layer, IfaceAddr_T* dest, MessageId_T* mid, bool needResponse, bool isResponse,
 			 void* data, PayloadSize_T size){
 	if(NULL == layer)
@@ -339,7 +331,6 @@ int processReceivedMessage(LoraIfaceLayer_T* layer, RxData_T* data){
 	data->Processed = true;
 	return FUNC_RESULT_SUCCESS;
 }
-
 int interfaceStateProcessing(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
