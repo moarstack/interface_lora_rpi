@@ -135,7 +135,7 @@ IfaceListenChannel_T startListen(LoraIfaceLayer_T* layer){
 			(timeCompare(timeGetDifference(currentTime, layer->LastBeaconReceived),
 				 layer->Settings.BeaconListenForce) > 0)||
 			timeCompare(timeGetDifference(currentTime, layer->StartupTime),
-				layer->Settings.BeaconListenStartup) ||
+				layer->Settings.BeaconListenStartup) < 0 ||
 			(layer->ListenBeacon && timeCompare(timeGetDifference(currentTime,layer->ListenBeaconStart),
 										layer->Settings.BeaconListenTimeout)<0)))
 			){
@@ -150,7 +150,7 @@ IfaceListenChannel_T startListen(LoraIfaceLayer_T* layer){
 				 layer->Settings.BeaconListenForce) > 0)
 			printf("Time from last beacon %d > %d\n",(currentTime-layer->LastBeaconReceived),layer->Settings.BeaconListenForce);
 		if(timeCompare(timeGetDifference(currentTime, layer->StartupTime),
-				layer->Settings.BeaconListenStartup))
+				layer->Settings.BeaconListenStartup) < 0)
 			printf("Current time %d < %d\n",currentTime-layer->StartupTime,layer->Settings.BeaconListenStartup);
 		if(layer->ListenBeacon && timeCompare(timeGetDifference(currentTime,layer->ListenBeaconStart),
 										layer->Settings.BeaconListenTimeout)<0)
