@@ -308,7 +308,19 @@ int processReceivedMessage(LoraIfaceLayer_T* layer, RxData_T* data){
 		printf("Valid CRC\n");
 		printf("TxPow %d Rssi %d Loss %d - ",header->TxPower,data->Rssi, header->TxPower-data->Rssi);
 		// is response
-		// is beacon
+		//process response state
+		//check for valid
+		IfaceResponsePayload_T* payload = (IfaceResponsePayload_T *)Iface_startPayload( data->Pointer );
+		//if valid
+		if(layer->CurrentCRC == payload->NormalMessageCrc && layer->CurrentFullCRC == payload->FullMessageCrc)
+		{
+			//reset waiting
+			layer->WaitingResponse = false;
+			layer->WaitingResponseTime = INFINITY_TIME;
+			int notifyRes = processIfaceMsgState(layer, &(layer->CurrentMid), IfacePackState_Responsed);
+			layer->Busy = false;
+		}
+		// is beacons
 		if(header->Beacon){
 			printf("Beacon %d from 0x%08x\n",layer->BeaconCounter, header->From);
 			layer->BeaconCounter++;

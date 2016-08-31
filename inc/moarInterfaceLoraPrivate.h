@@ -70,6 +70,7 @@ typedef struct{
 	moarTime_T 				TransmitResetTimeout;
 	moarTime_T 				TransmitStartTime;
 	moarTime_T				BeaconSendInterval;
+	moarTime_T 				WaitingResponseTime;
 	// other
 	uint16_t				NetSpeed;
 	// current message
