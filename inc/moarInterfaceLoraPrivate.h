@@ -67,8 +67,7 @@ typedef struct{
 	moarTime_T 				StartupTime;
 	moarTime_T 				LastBeaconReceived;
 	moarTime_T 				ListenBeaconStart;
-	moarTime_T 				TransmitResetTimeout;
-	moarTime_T 				TransmitStartTime;
+	moarTime_T 				TransmitResetTime;
 	moarTime_T				BeaconSendInterval;
 	moarTime_T 				WaitingResponseTime;
 	// other
