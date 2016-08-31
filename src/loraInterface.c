@@ -4,20 +4,13 @@
 
 #include <funcResults.h>
 #include <moarInterfaceLoraPrivate.h>
-#include <moarLoraSettings.h>
 #include <hwInterface.h>
 #include <interrupts.h>
-#include <wiringPi.h>
 #include "loraInterface.h"
-#include <hwConfig.h>
 #include <interface.h>
-#include <stdlib.h>
 #include <string.h>
 #include <crc16.h>
-#include <hashTable.h>
 #include <moarInterfaceCommand.h>
-#include <moarIfaceStructs.h>
-#include <interfaceNeighbors.h>
 
 // returns place in packet where iface header starts
 IfaceHeader_T * Iface_startHeader( Packet_T packet ){
@@ -47,7 +40,7 @@ int interfaceMakeBeacon(LoraIfaceLayer_T* layer, void* payload, PayloadSize_T si
 	beaconHeader->NeedResponse = 0;
 	//beaconHeader->Routing = 0;
 	beaconHeader->From = layer->LocalAddress;
-	beaconHeader->Size = size;
+	beaconHeader->Size = (SizePayload_T)size;
 	beaconHeader->To = layer->Settings.BeaconAddress;
 	if(size !=0 && payload != NULL) {
 		memcpy(Iface_startPayload(newBeaconData), payload, size);
@@ -110,7 +103,7 @@ CRCvalue_T calcPacketCrc(IfaceHeader_T* packet, bool override){
 }
 uint16_t calcTimeout(LoraIfaceLayer_T* layer, uint16_t size){
 	if(layer->NetSpeed > 0)
-		return ((((uint32_t)size+constantMessageOverhead)*1000) / layer->NetSpeed )*layer->Settings.TxTimeoutCoef;
+		return (uint16_t)(((((uint32_t)size+constantMessageOverhead)*1000) / layer->NetSpeed )*layer->Settings.TxTimeoutCoef);
 	else
 		return layer->Settings.TransmitTimeout;
 }
@@ -144,7 +137,7 @@ int updateNeighbors(LoraIfaceLayer_T* layer, IfaceHeader_T* header, int16_t rssi
 
 IfaceListenChannel_T startListen(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
-		return FUNC_RESULT_FAILED_ARGUMENT;
+		return ListenChannel_None;
 	printf("start listen\n");
 	if(layer->MonitorMode){
 		startRx(layer->Settings.MonitorChannel, layer->Settings.MonitorSeed);

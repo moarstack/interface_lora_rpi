@@ -39,7 +39,7 @@ typedef struct{
 //BEACON_CHANNEL 					0
 	uint8_t BeaconChannel;
 //BEACON_SEED						0xa3fc
-	int16_t BeaconSeed;
+	uint16_t BeaconSeed;
 	uint8_t MonitorChannel;
 	uint16_t MonitorSeed;
 //BEACON_DEFAULT_ADDRESS			0x00000000
