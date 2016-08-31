@@ -115,6 +115,33 @@ CRCvalue_T calcPacketCrc(IfaceHeader_T* packet, bool override){
 	return value;
 }
 
+int updateNeighbors(LoraIfaceLayer_T* layer, IfaceHeader_T* header, int16_t rssi){
+	if(NULL == header)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int16_t loss = header->TxPower-rssi;
+	int updateRes = FUNC_RESULT_FAILED;
+	// if beacons
+	if(header->Beacon) {
+		IfaceFooter_T* footer = Iface_startFooter(header);
+		// fill beacon struct
+		NeighborInfo_T neighbor = {0};
+		neighbor.SignalLoss = loss;
+		neighbor.Address = header->From;
+		neighbor.Frequency = footer->FreqStart;
+		neighbor.Seed = footer->FreqSeed;
+		neighbor.LastFailedTrys = 0;
+		neighbor.LastSeen = timeGetCurrent();
+		neighbor.MinSensitivity = footer->MinSensitivity;
+		updateRes = neighborsUpdate(layer, &neighbor, Iface_startPayload(header), header->Size);
+	} else{
+		// update last seen
+		updateRes = neighborsUpdateLastSeen(layer, &(header->From), loss);
+	}
+	return updateRes;
+}
+
 uint16_t calcTimeout(LoraIfaceLayer_T* layer, uint16_t size){
 	if(layer->NetSpeed > 0)
 		return ((((uint32_t)size+constantMessageOverhead)*1000) / layer->NetSpeed )*layer->Settings.TxTimeoutCoef;
@@ -269,7 +296,43 @@ int processReceivedMessage(LoraIfaceLayer_T* layer, RxData_T* data){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == data)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == data->Pointer || 0 == data->Size)
+		return FUNC_RESULT_FAILED_ARGUMENT;
 
+	IfaceHeader_T* header = Iface_startHeader( data->Pointer );
+	layer->TotalPacketsCounter++;
+	//check crc
+	CRCvalue_T packetValue = header->CRC;
+	CRCvalue_T val = calcPacketCrc(header,true);
+	if(packetValue==val) {
+		printf("Valid CRC\n");
+		printf("TxPow %d Rssi %d Loss %d - ",header->TxPower,data->Rssi, header->TxPower-data->Rssi);
+		// is response
+		// is beacon
+		if(header->Beacon){
+			printf("Beacon %d from 0x%08x\n",layer->BeaconCounter, header->From);
+			layer->BeaconCounter++;
+			layer->LastBeaconReceived = timeGetCurrent();
+		}
+		// is data
+		if(header->Size!=0 && !header->Response && !header->Beacon) {
+			// process data
+			int notifyRes = processIfaceReceived(layer, &(header->From), Iface_startPayload(header), header->Size);
+		}
+		// if need response
+		if(header->NeedResponse){
+
+//			int responseRes = sendResponse(layer, header, val);
+		}
+		// update neighbors
+		if(!layer->MonitorMode)
+			updateNeighbors(layer, header,data->Rssi);
+	}
+	else{
+		// broken
+		layer->BrokenCounter++;
+	}
+	data->Processed = true;
 	return FUNC_RESULT_SUCCESS;
 }
 

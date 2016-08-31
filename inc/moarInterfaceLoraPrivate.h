@@ -76,6 +76,10 @@ typedef struct{
 	CRCvalue_T 				CurrentCRC;
 	CRCvalue_T 				CurrentFullCRC;
 	MessageId_T				CurrentMid;
+	//stats
+	int 					BeaconCounter;
+	int 					TotalPacketsCounter;
+	int 					BrokenCounter;
 }LoraIfaceLayer_T;
 
 #pragma pack(push, 1)

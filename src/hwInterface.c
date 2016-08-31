@@ -443,6 +443,7 @@ void* test(void* arg){
 	header->Response  = 0;
 	header->Size = 0;
 	header->TxPower = 0;
+	header->CRC = 34300;
 
 	footer->FreqSeed = 1;
 	footer->FreqStart = 1;
