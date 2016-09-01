@@ -62,6 +62,7 @@ typedef struct{
 	bool 					Startup;
 	bool					WaitingResponse;
 	bool 					MonitorMode;
+	bool 					LastIsBeacon;
 	// timeouts
 	moarTime_T 				LastBeacon;
 	moarTime_T 				LastBeaconSent;

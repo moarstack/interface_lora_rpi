@@ -116,7 +116,8 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	LoraIfaceLayer_T layer = {0};
 	int logOpen = LogOpen(LOG_FILE_PATH, &(layer.Log));
 	LogSetLevelLog(layer.Log, LogLevel_Dump);
-	LogWrite(layer.Log, LogLevel_Information, "LORA Interface layer started");
+	LogSetLevelDump(layer.Log, LogLevel_Dump);
+	LogWrite(layer.Log, LogLevel_Critical, ">>>>>>>>>>>>>>>>>>>>>>>>> LORA Interface layer started <<<<<<<<<<<<<<<<<<<<<<<<<");
 	int initRes = ifaceInit(&layer, arg);
 	if(FUNC_RESULT_SUCCESS != initRes) {
 		LogErrMoar(layer.Log,LogLevel_Critical, initRes, "Layer init failed");
@@ -163,7 +164,6 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 				int fd = layer.EpollEvent[i].data.fd;
 				int processRes = FUNC_RESULT_FAILED;
 				if (fd == layer.ChannelSocket) {
-					LogWrite(layer.Log, LogLevel_DebugVerbose, "Processing command");
 					processRes = ProcessCommand(&layer, fd, event, EPOLL_CHANNEL_EVENTS, layer.ChannelProcessingRules);
 				}
 				else if(fd == layer.SignalFd) { //signal here

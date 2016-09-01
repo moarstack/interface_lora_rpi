@@ -209,6 +209,7 @@ int sendBeacon(LoraIfaceLayer_T* layer){
 	layer->TransmitResetTime = timeAddInterval(timeGetCurrent(),calcTimeout(layer, layer->BeaconDataSize));
 	layer->LastBeaconSent = timeGetCurrent();
 	layer->Busy = true;
+	layer->LastIsBeacon = true;
 	return FUNC_RESULT_SUCCESS;
 }
 int sendData(LoraIfaceLayer_T* layer, IfaceAddr_T* dest, bool needResponse, bool isResponse,
@@ -255,6 +256,7 @@ int sendData(LoraIfaceLayer_T* layer, IfaceAddr_T* dest, bool needResponse, bool
 	// set up flags
 	layer->TransmitResetTime = timeAddInterval(timeGetCurrent(),calcTimeout(layer, SzIfaceHeader + size));
 	layer->WaitingResponse = needResponse;
+	layer->LastIsBeacon = false;
 	// free data
 	free(fullData);
 	layer->Busy = true;
@@ -367,7 +369,8 @@ int interfaceStateProcessing(LoraIfaceLayer_T* layer){
 			layer->WaitingResponseTime = timeAddInterval(currentTime, layer->Settings.WaitingResponseTimeout);
 		else {
 			layer->Busy = false;
-			processIfaceMsgState(layer, &(layer->CurrentMid), IfacePackState_Sent);
+			if(!layer->LastIsBeacon)
+				processIfaceMsgState(layer, &(layer->CurrentMid), IfacePackState_Sent);
 		}
 		resetInterfaceState();
 		startListen(layer);
