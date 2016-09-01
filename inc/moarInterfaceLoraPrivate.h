@@ -24,6 +24,7 @@
 #define CHANNEL_PROCESSING_RULES_COUNT		5
 #define IFACE_ADDR_SIZE						4
 #define NEIGHBORS_TABLE_SIZE				37
+#define LOG_FILE_PATH						"/tmp/lora_iface.log"
 typedef struct {
 	uint8_t Address[IFACE_ADDR_SIZE];
 }IfaceAddr_T;
@@ -80,6 +81,8 @@ typedef struct{
 	int 					BeaconCounter;
 	int 					TotalPacketsCounter;
 	int 					BrokenCounter;
+	// logging
+	LogHandle_T 			Log;
 }LoraIfaceLayer_T;
 
 #pragma pack(push, 1)
