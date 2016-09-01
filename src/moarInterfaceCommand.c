@@ -83,6 +83,7 @@ int processIfaceReceived(LoraIfaceLayer_T* layer, IfaceAddr_T* address, void* pa
 	if(0 == size)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	LogWrite(layer->Log, LogLevel_DebugQuiet, "Processing interface received command");
+	LogWrite(layer->Log, LogLevel_Dump, "Received message content %b", payload, size);
 	IfaceReceiveMetadata_T metadata = {0};
 	metadata.From = *address;
 	midGenerate(&(metadata.Id), MoarLayer_Interface);
@@ -135,6 +136,7 @@ int processIfaceNeighbors(LoraIfaceLayer_T* layer, LayerCommandType_T type, Ifac
 		payload = NULL;
 		size = 0;
 	}
+	//LogWrite(layer->Log, LogLevel_Dump, "Received message content %b", payload, size);
 	IfaceNeighborMetadata_T metadata = {0};
 	metadata.Neighbor = *addr;
 	LayerCommandStruct_T command = {0};
