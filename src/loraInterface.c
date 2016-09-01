@@ -211,13 +211,11 @@ int sendBeacon(LoraIfaceLayer_T* layer){
 	layer->Busy = true;
 	return FUNC_RESULT_SUCCESS;
 }
-int sendData(LoraIfaceLayer_T* layer, IfaceAddr_T* dest, MessageId_T* mid, bool needResponse, bool isResponse,
+int sendData(LoraIfaceLayer_T* layer, IfaceAddr_T* dest, bool needResponse, bool isResponse,
 			 void* data, PayloadSize_T size){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == dest)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(NULL == mid)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == data || 0 == size)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -229,8 +227,6 @@ int sendData(LoraIfaceLayer_T* layer, IfaceAddr_T* dest, MessageId_T* mid, bool 
 	if(FUNC_RESULT_SUCCESS != neighborRes){
 		return FUNC_RESULT_FAILED_NEIGHBORS;
 	}
-	// set mid
-	layer->CurrentMid = *mid;
 	// prepare ifac
 	resetInterfaceState();
 	int8_t power = setPower(layer->Settings.DataTxPower, layer->Settings.DataTxBoost);
@@ -311,7 +307,7 @@ int processReceivedMessage(LoraIfaceLayer_T* layer, RxData_T* data){
 			IfaceResponsePayload_T payload = {0};
 			payload.NormalMessageCrc = val;
 			payload.FullMessageCrc = calcPacketCrc(header,false);
-			int responseRes = sendData(layer, &(header->From), NULL, false, true, &payload, sizeof(payload));
+			int responseRes = sendData(layer, &(header->From), false, true, &payload, sizeof(payload));
 		}
 		// update neighbors
 		if(!layer->MonitorMode)
