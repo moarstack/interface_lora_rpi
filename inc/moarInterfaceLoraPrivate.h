@@ -80,6 +80,7 @@ typedef struct{
 	MessageId_T				CurrentMid;
 	//stats
 	int 					BeaconCounter;
+	int 					SentBeaconCounter;
 	int 					TotalPacketsCounter;
 	int 					BrokenCounter;
 	// logging
