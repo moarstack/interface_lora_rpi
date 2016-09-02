@@ -19,7 +19,7 @@ int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
 	if(NULL == command->MetaData)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	LoraIfaceLayer_T* layer = (LoraIfaceLayer_T*)layerRef;
-	LogWrite(layer->Log, LogLevel_DebugQuiet, "Processing send command");
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Processing send command");
 	ChannelSendMetadata_T* metadata = (ChannelSendMetadata_T*)command->MetaData;
 	LogWrite(layer->Log, LogLevel_DebugVerbose, "Message to %b", &(metadata->To), sizeof(IfaceAddr_T));
 	LogWrite(layer->Log, LogLevel_DebugVerbose, "Message ID %b", &(metadata->Id), sizeof(MessageId_T));
@@ -27,6 +27,7 @@ int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
 	IfacePackState_T state = IfacePackState_Notsent;
 	if(NULL != command->Data && 0 != command->DataSize && !layer->Busy) {
 		LogWrite(layer->Log, LogLevel_Dump, "Message content %b", command->Data, command->DataSize);
+		LogWrite(layer->Log, LogLevel_Dump, "Message need response %d", metadata->NeedResponse);
 		int sendRes = sendData(layer, &(metadata->To), metadata->NeedResponse, false, command->Data, command->DataSize);
 		LogErrMoar(layer->Log, LogLevel_DebugVerbose, sendRes, "Send result");
 		if (FUNC_RESULT_SUCCESS == sendRes) {
@@ -53,7 +54,7 @@ int processBeaconUpdateCommand(void* layerRef, int fd, LayerCommandStruct_T* com
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	LoraIfaceLayer_T* layer = (LoraIfaceLayer_T*)layerRef;
-	LogWrite(layer->Log, LogLevel_DebugQuiet, "Processing beacon update command");
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Processing beacon update command");
 	int res = interfaceMakeBeacon(layer, command->Data, command->DataSize);
 	return res;
 }
@@ -66,7 +67,7 @@ int processRegResultCommand(void* layerRef, int fd, LayerCommandStruct_T* comman
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	LoraIfaceLayer_T* layer = (LoraIfaceLayer_T*)layerRef;
-	LogWrite(layer->Log, LogLevel_DebugQuiet, "Processing reg result command");
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Processing reg result command");
 	ChannelRegisterResultMetadata_T* regResult = (ChannelRegisterResultMetadata_T*)command->MetaData;
 	layer->Registred = regResult->Registred;
 	LogWrite(layer->Log, LogLevel_DebugVerbose, "Registration result %d", layer->Registred);
@@ -82,7 +83,7 @@ int processIfaceReceived(LoraIfaceLayer_T* layer, IfaceAddr_T* address, void* pa
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(0 == size)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	LogWrite(layer->Log, LogLevel_DebugQuiet, "Processing interface received command");
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Processing interface received command");
 	LogWrite(layer->Log, LogLevel_Dump, "Received message content %b", payload, size);
 	IfaceReceiveMetadata_T metadata = {0};
 	metadata.From = *address;
@@ -104,7 +105,7 @@ int processIfaceMsgState(LoraIfaceLayer_T* layer, MessageId_T* mid, IfacePackSta
 	if(NULL == mid)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	LogWrite(layer->Log, LogLevel_DebugQuiet, "Processing interface message state command");
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Processing interface message state command");
 
 	IfacePackStateMetadata_T metadata = {0};
 	metadata.Id = *mid;

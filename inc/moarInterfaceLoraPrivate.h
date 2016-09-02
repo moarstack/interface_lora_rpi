@@ -78,6 +78,7 @@ typedef struct{
 	CRCvalue_T 				CurrentCRC;
 	CRCvalue_T 				CurrentFullCRC;
 	MessageId_T				CurrentMid;
+	IfaceAddr_T				CurrentMsgAddr;
 	//stats
 	int 					BeaconCounter;
 	int 					SentBeaconCounter;

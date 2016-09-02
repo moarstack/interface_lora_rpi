@@ -125,7 +125,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	}
 	// load configuration
 	// init settings
-	LogWrite(layer.Log, LogLevel_Information, "Init interface in settings");
+	LogWrite(layer.Log, LogLevel_DebugVerbose, "Init interface internal settings");
 	Init_IfaceSettings(&(layer.Settings));
 	// init internal interface
 	int ifaceRes = interfaceInit(&layer);
