@@ -19,7 +19,7 @@
 #define LORA_CRC_OVERHEAD 2
 #define LORA_PREAMBLE_CONST_OVERHEAD 5
 #define LORA_MESSAGE_OVERHEAD (LORA_HEADER_OVERHEAD + LORA_CRC_OVERHEAD + LORA_PREAMBLE_CONST_OVERHEAD)
-#define DEBUGOUT printf
+#define DEBUGOUT(format, ...) LogWrite(log, LogLevel_DebugVerbose, format, ##__VA_ARGS__)
 #define DEBUG_LEVEL0
 #define DEBUG_LEVEL1
 #define DEBUG_LEVEL2
@@ -27,6 +27,7 @@
 #define DEBUG_THREADS
 
 pthread_t thread = 0;
+LogHandle_T log;
 //can be replaced by on fly generation
 uint8_t* channelsTable = NULL;
 //physical
@@ -463,9 +464,10 @@ void* test(void* arg){
 #endif
 
 //lora init
-bool Init_LORA(LORA_Settings_T* settings){
+bool Init_LORA(LORA_Settings_T* settings, LogHandle_T handle){
 	bool res = true;
 	thread = pthread_self();
+	log = handle;
 	constantMessageOverhead = 0;
 #ifdef DEBUG_LEVEL0
 	DEBUGOUT("Init SPI\n");
