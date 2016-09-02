@@ -248,33 +248,33 @@ void enqueueResponse(IfaceHeader_T* header, CRCvalue_T crc){
 	//add to queue
 //	QueuedecWriteToFront(QName_routedown,&message);
 }
-//queue in, out, spi port, address
-void Init_Interface(IfaceAddr_T address, IfaceSettings_T* settings){
-	nodeAddress = address;
-	//srand(address);
-	//pseudorandom send start
-	lastBeaconSent = random()%beaconSendInterval;
-	Init_LORA(&(settings->LORA_Settings));
-	ifaceSettings = settings;
-	listeningChannel = random()%channelsCount;
-	listeningSeed = random()&UINT16_MAX;
-
-	beaconSendInterval = ifaceSettings->BeaconSendInterval;
-	waitingResponseTimeout = ifaceSettings->WaitingResponseTimeout;
-	transmitResetTimeout = ifaceSettings->TransmitTimeout;
-	lastBeaconSent = 0;
-
-	if(neighbors)
-		vPortFree(neighbors);
-	neighbors = pvPortMalloc(ifaceSettings->NeighborsCount*sizeof(NeighborInfo_T));
-#ifdef DEBUG_LEVEL0
-	DEBUGOUT("Listen channel 0x%02x\n",listeningChannel);
-	DEBUGOUT("Channel seed 0x%04x\n",listeningSeed);
-#endif
-	//some other stuff
-	makeBeacon(settings->BeaconDefaultPayloadSize, NULL);
-	resetInterfaceState();
-}
+////queue in, out, spi port, address
+//void Init_Interface(IfaceAddr_T address, IfaceSettings_T* settings){
+//	nodeAddress = address;
+//	//srand(address);
+//	//pseudorandom send start
+//	lastBeaconSent = random()%beaconSendInterval;
+//	Init_LORA(&(settings->LORA_Settings));
+//	ifaceSettings = settings;
+//	listeningChannel = random()%channelsCount;
+//	listeningSeed = random()&UINT16_MAX;
+//
+//	beaconSendInterval = ifaceSettings->BeaconSendInterval;
+//	waitingResponseTimeout = ifaceSettings->WaitingResponseTimeout;
+//	transmitResetTimeout = ifaceSettings->TransmitTimeout;
+//	lastBeaconSent = 0;
+//
+//	if(neighbors)
+//		vPortFree(neighbors);
+//	neighbors = pvPortMalloc(ifaceSettings->NeighborsCount*sizeof(NeighborInfo_T));
+//#ifdef DEBUG_LEVEL0
+//	DEBUGOUT("Listen channel 0x%02x\n",listeningChannel);
+//	DEBUGOUT("Channel seed 0x%04x\n",listeningSeed);
+//#endif
+//	//some other stuff
+//	makeBeacon(settings->BeaconDefaultPayloadSize, NULL);
+//	resetInterfaceState();
+//}
 
 //process message
 void processMessage(RxData_T* data){
@@ -581,7 +581,7 @@ void Interface_MainTaskLoop(void *pvParameters){
 #ifdef DEBUG_LEVEL0
 			DEBUGOUT("IFACE TIMEOUT - RESET LORA\n");
 #endif
-			Init_LORA(&(ifaceSettings->LORA_Settings));
+			//Init_LORA(&(ifaceSettings->LORA_Settings));
 			lastReset = currentTime;
 			enableReset = false;
 			netSpeed = 0;
