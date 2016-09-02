@@ -20,6 +20,7 @@ uint32_t addressHash(void* addr, size_t size){
 int neighborsInit(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	LogWrite(layer->Log, LogLevel_DebugQuiet, "Init neighbors");
 	int res = hashInit(&(layer->Neighbors),addressHash, NEIGHBORS_TABLE_SIZE , sizeof(IfaceAddr_T), sizeof(NeighborInfo_T));
 	return res;
 }
@@ -28,8 +29,9 @@ int neighborsAdd(LoraIfaceLayer_T* layer, NeighborInfo_T* neighbor, void* payloa
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == neighbor)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	int notifyRes = processIfaceNeighbors(layer, LayerCommandType_NewNeighbor, &(neighbor->Address), payload, size);
+	LogWrite(layer->Log, LogLevel_Information, "Add new neighbor %b", &(neighbor->Address), sizeof(IfaceAddr_T));
 	int res = hashAdd(&(layer->Neighbors),&(neighbor->Address), neighbor);
+	int notifyRes = processIfaceNeighbors(layer, LayerCommandType_NewNeighbor, &(neighbor->Address), payload, size);
 	return res;
 }
 int neighborsUpdate(LoraIfaceLayer_T* layer, NeighborInfo_T* neighbor, void* payload, PayloadSize_T size){
@@ -43,6 +45,7 @@ int neighborsUpdate(LoraIfaceLayer_T* layer, NeighborInfo_T* neighbor, void* pay
 		int res = neighborsAdd(layer,neighbor, payload, size);
 		return res;
 	}
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Update neighbor %b", &(neighbor->Address), sizeof(IfaceAddr_T));
 	*stored = *neighbor;
 	int notifyRes = processIfaceNeighbors(layer, LayerCommandType_UpdateNeighbor, &(neighbor->Address), payload, size);
 	return FUNC_RESULT_SUCCESS;
@@ -63,8 +66,9 @@ int neighborsRemove(LoraIfaceLayer_T* layer, IfaceAddr_T* addr){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == addr)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	int notifyRes = processIfaceNeighbors(layer, LayerCommandType_LostNeighbor, addr, NULL, 0);
+	LogWrite(layer->Log, LogLevel_Information, "Remove neighbor %b", &(addr), sizeof(IfaceAddr_T));
 	int res = hashRemove(&(layer->Neighbors), addr);
+	int notifyRes = processIfaceNeighbors(layer, LayerCommandType_LostNeighbor, addr, NULL, 0);
 	return res;
 }
 int neighborsUpdateSendtrys(LoraIfaceLayer_T* layer, IfaceAddr_T* addr, bool responded){
