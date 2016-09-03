@@ -94,8 +94,10 @@ int interfaceInit(LoraIfaceLayer_T* layer){
 	layer->ListeningSeed = rand() % UINT16_MAX;
 	LogWrite(layer->Log, LogLevel_DebugQuiet, "Setting channel 0x%02x and seed 0x%04x", layer->ListeningChannel, layer->ListeningSeed);
 	layer->StartupTime = timeGetCurrent();
+	layer->LastBeaconSent = timeGetCurrent();
 	layer->BeaconSendInterval = layer->Settings.BeaconStartupInterval;
 	layer->TransmitResetTime = INFINITY_TIME;
+	layer->WaitingResponseTime = INFINITY_TIME;
 	// reset interface state here
 	return FUNC_RESULT_SUCCESS;
 }
@@ -414,20 +416,30 @@ int interfaceStateProcessing(LoraIfaceLayer_T* layer){
 	}
 	// if interface is still free and time to send beacons
 	if(rts &&
-			timeCompare(timeGetDifference(timeGetCurrent(), layer->LastBeaconSent),layer->BeaconSendInterval)>0){
+			timeCompare(timeGetDifference(currentTime, layer->LastBeaconSent),layer->BeaconSendInterval)>0){
 		//send beacons
 		sendBeacon(layer);
 
-		if(timeCompare(timeGetDifference(timeGetCurrent(), layer->StartupTime),
+		if(timeCompare(timeGetDifference(currentTime, layer->StartupTime),
 					   layer->Settings.BeaconStartupDuration)>0) {
 			layer->BeaconSendInterval = layer->Settings.BeaconSendInterval +
 										((rand() % layer->Settings.BeaconSendDeviation) -
 										 layer->Settings.BeaconSendDeviation / 2);
 			LogWrite(layer->Log, LogLevel_Dump, "Changing beacon send interval to %d", layer->BeaconSendInterval);
 		}
-		// TODO next event time calculation here
 	}
 
+	moarTime_T min = EPOLL_TIMEOUT;
+	moarTime_T toWaiting = timeGetDifference(layer->WaitingResponseTime, currentTime);
+	min = (timeCompare(min, toWaiting) < 0) ? min : toWaiting;
+	moarTime_T toTransmit = timeGetDifference(layer->TransmitResetTime, currentTime);
+	min = (timeCompare(min, toTransmit) < 0) ? min : toTransmit;
+	moarTime_T toBeacon = timeGetDifference(timeAddInterval(layer->LastBeaconSent,layer->BeaconSendInterval), currentTime);
+	min = (timeCompare(min, toBeacon) < 0) ? min : toBeacon;
+	min = min>0 ? min: EPOLL_TIMEOUT;
+	layer->EpollTimeout = min;
+
+	LogWrite(layer->Log, LogLevel_Dump, "Setting next epoll timeout %d", layer->EpollTimeout);
 
 	return FUNC_RESULT_SUCCESS;
 }
