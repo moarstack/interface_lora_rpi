@@ -39,7 +39,6 @@ int neighborsUpdate(LoraIfaceLayer_T* layer, NeighborInfo_T* neighbor, void* pay
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == neighbor)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-
 	NeighborInfo_T* stored = hashGetPtr(&(layer->Neighbors),&(neighbor->Address));
 	if(NULL == stored){
 		int res = neighborsAdd(layer,neighbor, payload, size);

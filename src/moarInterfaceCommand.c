@@ -71,6 +71,9 @@ int processRegResultCommand(void* layerRef, int fd, LayerCommandStruct_T* comman
 	ChannelRegisterResultMetadata_T* regResult = (ChannelRegisterResultMetadata_T*)command->MetaData;
 	layer->Registred = regResult->Registred;
 	LogWrite(layer->Log, LogLevel_DebugVerbose, "Registration result %d", layer->Registred);
+	if(layer->Registred){
+		startListen(layer);
+	}
 	return FUNC_RESULT_SUCCESS;
 
 }

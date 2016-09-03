@@ -69,6 +69,12 @@ int interfaceInit(LoraIfaceLayer_T* layer){
 	LogWrite(layer->Log, LogLevel_DebugVerbose, "Init wiring pi");
 	int wpiRes = wiringPiSetup();
 #endif
+	// init neighbors here
+	int neighborsRes = neighborsInit(layer);
+	if(FUNC_RESULT_SUCCESS != neighborsRes) {
+		LogErrMoar(layer->Log, LogLevel_Critical, neighborsRes, "Neighbors init failed");
+		return neighborsRes;
+	}
 	// init interrupts
 	LogWrite(layer->Log, LogLevel_DebugVerbose, "Init interrupts");
 	Init_interupts();
@@ -76,12 +82,7 @@ int interfaceInit(LoraIfaceLayer_T* layer){
 	bool res = Init_LORA(&(layer->Settings.LORA_Settings), layer->Log);
 //	if(!res)
 //		return FUNC_RESULT_FAILED;
-	// init neighbors here
-	int neighborsRes = neighborsInit(layer);
-	if(FUNC_RESULT_SUCCESS != neighborsRes) {
-		LogErrMoar(layer->Log, LogLevel_Critical, neighborsRes, "Neighbors init failed");
-		return neighborsRes;
-	}
+
 	// create beacon packet here
 	int beaconRes = interfaceMakeBeacon(layer, NULL, 0);
 	if(FUNC_RESULT_SUCCESS != beaconRes) {
@@ -149,6 +150,7 @@ int updateNeighbors(LoraIfaceLayer_T* layer, IfaceHeader_T* header, int16_t rssi
 		neighbor.LastFailedTrys = 0;
 		neighbor.LastSeen = timeGetCurrent();
 		neighbor.MinSensitivity = footer->MinSensitivity;
+		LogWrite(layer->Log, LogLevel_DebugVerbose, "Call beacon update");
 		updateRes = neighborsUpdate(layer, &neighbor, Iface_startPayload(header), header->Size);
 	} else{
 		LogWrite(layer->Log, LogLevel_DebugVerbose, "Updating last seen");
@@ -301,7 +303,7 @@ int processReceivedMessage(LoraIfaceLayer_T* layer, RxData_T* data){
 	CRCvalue_T packetValue = header->CRC;
 	CRCvalue_T val = calcPacketCrc(header,true);
 	if(packetValue==val) {
-		LogWrite(layer->Log, LogLevel_Information, "Received data from %b, size %d", &(header->From), sizeof(IfaceAddr_T), data->Size);
+		LogWrite(layer->Log, LogLevel_Information, "Received data from %b, size %hu", &(header->From), sizeof(IfaceAddr_T), data->Size);
 		LogWrite(layer->Log, LogLevel_DebugQuiet, "TxPow %d Rssi %d Loss %d",header->TxPower,data->Rssi, header->TxPower-data->Rssi);
 		LogWrite(layer->Log, LogLevel_Dump, "Data is %b", data->Pointer, data->Size);
 		// is response
@@ -309,7 +311,7 @@ int processReceivedMessage(LoraIfaceLayer_T* layer, RxData_T* data){
 		//check for valid
 		IfaceResponsePayload_T* payload = (IfaceResponsePayload_T *)Iface_startPayload( data->Pointer );
 		//if valid
-		if(layer->CurrentCRC == payload->NormalMessageCrc && layer->CurrentFullCRC == payload->FullMessageCrc)
+		if(header->Response && layer->CurrentCRC == payload->NormalMessageCrc && layer->CurrentFullCRC == payload->FullMessageCrc)
 		{
 			LogWrite(layer->Log, LogLevel_DebugQuiet, "Valid Response for message %b",&(layer->CurrentMid), sizeof(MessageId_T));
 			//reset waiting
@@ -322,7 +324,7 @@ int processReceivedMessage(LoraIfaceLayer_T* layer, RxData_T* data){
 		// is beacons
 		if(header->Beacon){
 			layer->BeaconCounter++;
-			LogWrite(layer->Log, LogLevel_DebugQuiet, "Beacon %d from %b",layer->BeaconCounter, &(header->From), sizeof(IfaceAddr_T));
+			LogWrite(layer->Log, LogLevel_DebugQuiet, "Beacon %d",layer->BeaconCounter);
 			layer->LastBeaconReceived = timeGetCurrent();
 		}
 		// is data
