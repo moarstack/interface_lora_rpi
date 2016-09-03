@@ -10,11 +10,14 @@
 #include "hwInterface.h"
 #include "stdfunc.h"
 #include "string.h"
+#include "moarInterfaceLoraPrivate.h"
 #include <pthread.h>
 #include <zconf.h>
 #include <bits/sigthread.h>
 #include <bits/signum.h>
 #include <signal.h>
+#include <moarIfaceStructs.h>
+
 #define inline
 
 #define LORA_HEADER_OVERHEAD 4
@@ -46,6 +49,8 @@ uint8_t channelsCount;
 uint32_t channelBandwidth;
 
 LORA_Settings_T* loraSettings;
+
+
 //init
 inline void freqDivisionInit(LORA_Settings_T* settings){
 	uint32_t realBandwidth = settings->MaxFrequency-settings->MinFrequency;
@@ -120,6 +125,20 @@ void CadDetectedHandler(){
 	// send signal
 	pthread_kill(thread, SIGUSR1);
 }
+
+
+// testing
+
+void* riseTxDone(void* arg){
+	//printf("start tx\n");
+	//sleep(1);
+	//printf("signal tx\n");
+	TxDoneHandler();
+	//printf("signaled tx\n");
+}
+
+//////////
+
 void resetInterfaceState(){
 	LORA_ResetIrqFlags();
 	LORA_SwitchToStandby();
@@ -150,6 +169,9 @@ uint8_t startTx(uint8_t channel, uint16_t seed, uint8_t* data, uint16_t size){
 	LORA_StartTx(getFrequency(channel),data,size);
 	events.TxDone = 0;
 	interfaceState = InterfaceState_Transmit;
+
+	pthread_t newthread;
+	pthread_create(&(newthread),NULL, riseTxDone, NULL);
 	return 0;
 }
 //message avail
@@ -410,11 +432,34 @@ inline bool Init_Frequency_Division(LORA_Settings_T* settings){
 }
 
 void* test(void* arg){
-	printf("start\n");
-	sleep(5);
-	printf("signal\n");
-	pthread_kill(thread, SIGUSR1);
-	printf("signaled\n");
+	//printf("start\n");
+
+	uint8_t data[sizeof(IfaceHeader_T)+sizeof(IfaceFooter_T)];
+	IfaceHeader_T* header = data;
+	IfaceFooter_T* footer = data+sizeof(IfaceHeader_T);
+
+	header->Beacon = 1;
+	header->NeedResponse  = 0;
+	header->Response  = 0;
+	header->Size = 0;
+	header->TxPower = 0;
+
+	footer->FreqSeed = 1;
+	footer->FreqStart = 1;
+	footer->MinSensitivity = -100;
+
+	while(true) {
+
+		sleep(15);
+		if(interfaceState == InterfaceState_Receive) {
+			//printf("signal rx\n");
+			//pthread_kill(thread, SIGUSR1);
+			//create data
+			//rise
+			RxDoneHandler(data,sizeof(data),0, LORA_RX_Continiuos);
+			//printf("signaled rx\n");
+		}
+	}
 }
 
 //lora init

@@ -17,7 +17,6 @@
 #include <interfaceNeighbors.h>
 
 
-#define INFINITY_TIME					UINT64_MAX
 // maximum size of usual iface packet payload
 #define SzIfaceMaxPacket		256
 

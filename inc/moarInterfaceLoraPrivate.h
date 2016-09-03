@@ -19,7 +19,7 @@
 
 #define EPOLL_SOCKETS_COUNT 				2
 #define EPOLL_CHANNEL_EVENTS 				EPOLLIN
-#define EPOLL_TIMEOUT						10000
+#define EPOLL_TIMEOUT						1000
 #define EPOLL_EVENTS_COUNT					EPOLL_SOCKETS_COUNT
 #define CHANNEL_PROCESSING_RULES_COUNT		5
 #define IFACE_ADDR_SIZE						4
@@ -30,8 +30,10 @@ typedef struct {
 
 #include <moarLoraSettings.h>
 #include <hashTable.h>
+#include <moarIfaceStructs.h>
 
 typedef struct{
+	// layer logic
 	int 					ChannelSocket;
 	int 					SignalFd;
 	int 					EpollHandler;
@@ -43,13 +45,37 @@ typedef struct{
 	bool 					Registred;
 	CommandProcessingRule_T ChannelProcessingRules[CHANNEL_PROCESSING_RULES_COUNT];
 	SocketFilepath_T 		ChannelSocketPath;
-	IfaceAddr_T				LocalAddress;
+	// interface settings
 	IfaceSettings_T			Settings;
+	IfaceAddr_T				LocalAddress;
 	void* 					BeaconData;
+	PayloadSize_T 			BeaconDataSize;
+	// rf channel
 	uint8_t 				ListeningChannel;
 	uint16_t 				ListeningSeed;
+	// neighbors
 	hashTable_T				Neighbors;
 	bool 					Busy;
+	// inrerface states
+	bool					ListenBeacon;
+	bool 					Startup;
+	bool					WaitingResponse;
+	bool 					MonitorMode;
+	// timeouts
+	moarTime_T 				LastBeacon;
+	moarTime_T 				LastBeaconSent;
+	moarTime_T 				StartupTime;
+	moarTime_T 				LastBeaconReceived;
+	moarTime_T 				ListenBeaconStart;
+	moarTime_T 				TransmitResetTimeout;
+	moarTime_T 				TransmitStartTime;
+	moarTime_T				BeaconSendInterval;
+	// other
+	uint16_t				NetSpeed;
+	// current message
+	CRCvalue_T 				CurrentCRC;
+	CRCvalue_T 				CurrentFullCRC;
+	MessageId_T				CurrentMid;
 }LoraIfaceLayer_T;
 
 #pragma pack(push, 1)
