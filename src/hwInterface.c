@@ -5,11 +5,16 @@
  *  Created on: 03 февр. 2016 г.
  *      Author: svalov
  */
+#define _GNU_SOURCE
 #include "port.h"
 #include "hwInterface.h"
 #include "stdfunc.h"
 #include "string.h"
-
+#include <pthread.h>
+#include <zconf.h>
+#include <bits/sigthread.h>
+#include <bits/signum.h>
+#include <signal.h>
 #define inline
 
 #define LORA_HEADER_OVERHEAD 4
@@ -22,6 +27,8 @@
 #define DEBUG_LEVEL2
 #define DEBUG_LEVEL3
 
+
+pthread_t thread = 0;
 //can be replaced by on fly generation
 uint8_t* channelsTable = NULL;
 //physical
@@ -85,6 +92,8 @@ void RxDoneHandler(uint8_t *data, uint16_t size, int16_t rssi, LORA_RxMode_T mod
 		//set interface state
 		events.RxDone = 1;
 		interfaceState = InterfaceState_Busy;
+		// send signal
+		pthread_kill(thread, SIGUSR1);
 	}
 }
 void TxDoneHandler(){
@@ -92,18 +101,24 @@ void TxDoneHandler(){
 	LORA_SwitchToStandby();
 	events.TxDone = 1;
 	interfaceState = InterfaceState_On;
+	// send signal
+	pthread_kill(thread, SIGUSR1);
 }
 void RxTimeoutHandler(){
 	LORA_ResetIrqFlags();
 	LORA_SwitchToStandby();
 	events.RxTimeout = 1;
 	interfaceState = InterfaceState_On;
+	// send signal
+	pthread_kill(thread, SIGUSR1);
 }
 void CadDoneHandler(){
-
+	// send signal
+	pthread_kill(thread, SIGUSR1);
 }
 void CadDetectedHandler(){
-
+	// send signal
+	pthread_kill(thread, SIGUSR1);
 }
 void resetInterfaceState(){
 	LORA_ResetIrqFlags();
@@ -393,9 +408,19 @@ inline bool Init_Frequency_Division(LORA_Settings_T* settings){
 #endif
 	return true;
 }
+
+void* test(void* arg){
+	printf("start\n");
+	sleep(5);
+	printf("signal\n");
+	pthread_kill(thread, SIGUSR1);
+	printf("signaled\n");
+}
+
 //lora init
 bool Init_LORA(LORA_Settings_T* settings){
 	bool res = true;
+	thread = pthread_self();
 	constantMessageOverhead = 0;
 #ifdef DEBUG_LEVEL0
 	DEBUGOUT("Init SPI\n");
@@ -414,5 +439,7 @@ bool Init_LORA(LORA_Settings_T* settings){
 	res &= Init_LORA_handlers(settings);
 	interfaceState = InterfaceState_On;
 	recievedData.Processed = 1;
+	pthread_t newthread;
+	pthread_create(&(newthread),NULL, test, NULL);
 	return res;
 }
