@@ -70,7 +70,7 @@ void buildChannelsTable(uint8_t channel, uint16_t seed){
 	channelsTable[0] = channel;
 	int i=1;
 	for(;i<channelsCount;i++)
-		channelsTable[i] = (brand(&intSeed))%channelsCount;
+		channelsTable[i] = (ibrand(&intSeed))%channelsCount;
 }
 
 //interrupt handlers

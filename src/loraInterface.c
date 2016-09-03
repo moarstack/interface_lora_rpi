@@ -14,15 +14,15 @@
 #include <moarIfaceStructs.h>
 
 // returns place in packet where iface header starts
-IfaceHeader_T * Iface_startHeader( Packet_T packet ){
+IfaceHeader_T * Iface_startHeader(void* packet){
 	return (IfaceHeader_T*)(packet + IfaceHeaderStart);
 }
 // returns place in packet where iface payload starts
-Packet_T	Iface_startPayload( Packet_T packet ){
+Packet_T	Iface_startPayload(void* packet){
 	return packet + IfacePayloadStart;
 }
 // returns place in packet where iface footer starts
-IfaceFooter_T * Iface_startFooter( Packet_T packet ){
+IfaceFooter_T * Iface_startFooter(void* packet){
 	return (IfaceFooter_T *)(Iface_startPayload( packet ) + Iface_startHeader( packet )->Size);
 }
 
@@ -89,6 +89,7 @@ int interfaceInit(LoraIfaceLayer_T* layer){
 		LogErrMoar(layer->Log, LogLevel_Critical, neighborsRes, "Beacon creating failed");
 		return beaconRes;
 	}
+	srand(timeGetCurrent() & 0xFFFFFFFF);
 	layer->ListeningChannel = rand() % channelsCount;
 	layer->ListeningSeed = rand() % UINT16_MAX;
 	LogWrite(layer->Log, LogLevel_DebugQuiet, "Setting channel 0x%02x and seed 0x%04x", layer->ListeningChannel, layer->ListeningSeed);

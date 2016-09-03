@@ -10,7 +10,7 @@
 #include "stdbool.h"
 
 unsigned short reg[2];
-unsigned char brand( unsigned short * seed_place )
+unsigned char ibrand( unsigned short * seed_place )
 {
 	register unsigned short	reg;
 	register unsigned char	trc = 0, res, i;
@@ -36,13 +36,13 @@ unsigned char brand( unsigned short * seed_place )
 	return res;
 }
 
-void srand( unsigned int seed )
+void isrand( unsigned int seed )
 {
 	reg[ 0 ] = ( unsigned short )( seed & 0xFFFF );
 	reg[ 1 ] = ( unsigned short )( (seed>>16) & 0xFFFF );
 }
 
-int rand( void )
+int irand( void )
 {
 
 	register int	res = 0;
