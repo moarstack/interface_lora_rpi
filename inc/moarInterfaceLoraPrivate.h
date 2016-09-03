@@ -70,6 +70,7 @@ typedef struct{
 	moarTime_T 				LastBeaconReceived;
 	moarTime_T 				ListenBeaconStart;
 	moarTime_T 				TransmitResetTime;
+	moarTime_T 				TransmitStartTime;
 	moarTime_T				BeaconSendInterval;
 	moarTime_T 				WaitingResponseTime;
 	// other
@@ -79,6 +80,7 @@ typedef struct{
 	CRCvalue_T 				CurrentFullCRC;
 	MessageId_T				CurrentMid;
 	IfaceAddr_T				CurrentMsgAddr;
+	PayloadSize_T 			CurrentSize;
 	//stats
 	int 					BeaconCounter;
 	int 					SentBeaconCounter;
