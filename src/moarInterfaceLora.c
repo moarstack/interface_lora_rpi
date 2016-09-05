@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <sys/signalfd.h>
 #include <unistd.h>
+#include <moarCommons.h>
 
 int initEpoll(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
@@ -193,7 +194,18 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 		}
 		printf("time %lld\n",timeGetCurrent()-start);
 		int stateProcess = interfaceStateProcessing(&layer);
+		if(FUNC_RESULT_SUCCESS != stateProcess)
+			break;
 
 	}
+	// unregister here
+	LayerCommandStruct_T command = {0};
+	IfaceUnregisterMetadata_T metadata = {0};
+	command.Command = LayerCommandType_UnregisterInterface;
+	command.MetaData = &metadata;
+	command.MetaSize = sizeof(metadata);
+	LogWrite(layer.Log, LogLevel_Critical, "Interface unregistration");
+	int comRes =  WriteCommand(layer.ChannelSocket,&command);
+	LogClose(&(layer.Log));
 	return NULL;
 }
