@@ -11,24 +11,26 @@
 #include <string.h>
 #include <crc16.h>
 #include <moarInterfaceCommand.h>
+#include <moarIfaceStructs.h>
 
 // returns place in packet where iface header starts
-IfaceHeader_T * Iface_startHeader( Packet_T packet ){
+IfaceHeader_T * Iface_startHeader(void* packet){
 	return (IfaceHeader_T*)(packet + IfaceHeaderStart);
 }
 // returns place in packet where iface payload starts
-Packet_T	Iface_startPayload( Packet_T packet ){
+Packet_T	Iface_startPayload(void* packet){
 	return packet + IfacePayloadStart;
 }
 // returns place in packet where iface footer starts
-IfaceFooter_T * Iface_startFooter( Packet_T packet ){
+IfaceFooter_T * Iface_startFooter(void* packet){
 	return (IfaceFooter_T *)(Iface_startPayload( packet ) + Iface_startHeader( packet )->Size);
 }
 
 int interfaceMakeBeacon(LoraIfaceLayer_T* layer, void* payload, PayloadSize_T size){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-
+	LogWrite(layer->Log, LogLevel_DebugQuiet, "Creating beacon with payload");
+	//LogWrite(layer->Log, LogLevel_Dump, "New beacon payload is %b", payload, size);
 	size_t fullSize = SzIfaceHeader+size+SzIfaceFooter;
 	void* newBeaconData = malloc(fullSize);
 	if(NULL == newBeaconData)
@@ -54,26 +56,46 @@ int interfaceMakeBeacon(LoraIfaceLayer_T* layer, void* payload, PayloadSize_T si
 	if(oldPointer!=NULL){
 		free(oldPointer);
 	}
+	LogWrite(layer->Log, LogLevel_Dump, "New beacon content is %b", layer->BeaconData, layer->BeaconDataSize);
 	return  FUNC_RESULT_SUCCESS;
 }
 int interfaceInit(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Interface low level init");
+
 	// init hardware
 #ifdef ENABLE_IO
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Init wiring pi");
 	int wpiRes = wiringPiSetup();
 #endif
-	// init interrupts
-	Init_interupts();
-	bool res = Init_LORA(&(layer->Settings.LORA_Settings));
-//	if(!res)
-//		return FUNC_RESULT_FAILED;
 	// init neighbors here
 	int neighborsRes = neighborsInit(layer);
+	if(FUNC_RESULT_SUCCESS != neighborsRes) {
+		LogErrMoar(layer->Log, LogLevel_Critical, neighborsRes, "Neighbors init failed");
+		return neighborsRes;
+	}
+	// init interrupts
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Init interrupts");
+	Init_interupts();
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Init LORA");
+	bool res = Init_LORA(&(layer->Settings.LORA_Settings), layer->Log);
+//	if(!res)
+//		return FUNC_RESULT_FAILED;
+
 	// create beacon packet here
 	int beaconRes = interfaceMakeBeacon(layer, NULL, 0);
+	if(FUNC_RESULT_SUCCESS != beaconRes) {
+		LogErrMoar(layer->Log, LogLevel_Critical, neighborsRes, "Beacon creating failed");
+		return beaconRes;
+	}
+	srand(timeGetCurrent() & 0xFFFFFFFF);
+	layer->ListeningChannel = rand() % channelsCount;
+	layer->ListeningSeed = rand() % UINT16_MAX;
+	LogWrite(layer->Log, LogLevel_DebugQuiet, "Setting channel 0x%02x and seed 0x%04x", layer->ListeningChannel, layer->ListeningSeed);
 	layer->StartupTime = timeGetCurrent();
 	layer->BeaconSendInterval = layer->Settings.BeaconStartupInterval;
+	layer->TransmitResetTime = INFINITY_TIME;
 	// reset interface state here
 	return FUNC_RESULT_SUCCESS;
 }
@@ -113,10 +135,12 @@ int updateNeighbors(LoraIfaceLayer_T* layer, IfaceHeader_T* header, int16_t rssi
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Updating neighbor %b", &(header->From), sizeof(IfaceAddr_T));
 	int16_t loss = header->TxPower-rssi;
 	int updateRes = FUNC_RESULT_FAILED;
 	// if beacons
 	if(header->Beacon) {
+		LogWrite(layer->Log, LogLevel_DebugVerbose, "Updating from beacon");
 		IfaceFooter_T* footer = Iface_startFooter(header);
 		// fill beacon struct
 		NeighborInfo_T neighbor = {0};
@@ -127,20 +151,23 @@ int updateNeighbors(LoraIfaceLayer_T* layer, IfaceHeader_T* header, int16_t rssi
 		neighbor.LastFailedTrys = 0;
 		neighbor.LastSeen = timeGetCurrent();
 		neighbor.MinSensitivity = footer->MinSensitivity;
+		LogWrite(layer->Log, LogLevel_DebugVerbose, "Call beacon update");
 		updateRes = neighborsUpdate(layer, &neighbor, Iface_startPayload(header), header->Size);
 	} else{
+		LogWrite(layer->Log, LogLevel_DebugVerbose, "Updating last seen");
 		// update last seen
 		updateRes = neighborsUpdateLastSeen(layer, &(header->From), loss);
 	}
+	LogErrMoar(layer->Log, LogLevel_DebugVerbose, updateRes, "Neighbor update result");
 	return updateRes;
 }
 
 IfaceListenChannel_T startListen(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
 		return ListenChannel_None;
-	printf("start listen\n");
 	if(layer->MonitorMode){
 		startRx(layer->Settings.MonitorChannel, layer->Settings.MonitorSeed);
+		LogWrite(layer->Log, LogLevel_DebugVerbose, "Start listen monitor channel 0x%02x seed 0x%04x", layer->Settings.MonitorChannel, layer->Settings.MonitorSeed);
 		return ListenChannel_Monitor;
 	}
 	moarTime_T  currentTime = timeGetCurrent();
@@ -152,42 +179,37 @@ IfaceListenChannel_T startListen(LoraIfaceLayer_T* layer){
 			(layer->ListenBeacon && timeCompare(timeGetDifference(currentTime,layer->ListenBeaconStart),
 										layer->Settings.BeaconListenTimeout)<0)))
 			){
-#ifdef DEBUG_LEVEL1
-		DEBUGOUT("Listen for beacon 0x%02x\n",ifaceSettings->BeaconChannel);
-#endif
-
-//#ifdef DEBUG_LEVEL3
 		if(layer->Neighbors.Count == 0 )
-			printf("No neighbors\n");
+			LogWrite(layer->Log, LogLevel_Dump, "No neighbors\n");
 		if(timeCompare(timeGetDifference(currentTime, layer->LastBeaconReceived),
 				 layer->Settings.BeaconListenForce) > 0)
-			printf("Time from last beacon %d > %d\n",(currentTime-layer->LastBeaconReceived),layer->Settings.BeaconListenForce);
+			LogWrite(layer->Log, LogLevel_Dump, "Time from last beacon %ld > %d\n",(currentTime-layer->LastBeaconReceived),layer->Settings.BeaconListenForce);
 		if(timeCompare(timeGetDifference(currentTime, layer->StartupTime),
 				layer->Settings.BeaconListenStartup) < 0)
-			printf("Current time %d < %d\n",currentTime-layer->StartupTime,layer->Settings.BeaconListenStartup);
+			LogWrite(layer->Log, LogLevel_Dump, "Current time %d < %d\n",currentTime-layer->StartupTime,layer->Settings.BeaconListenStartup);
 		if(layer->ListenBeacon && timeCompare(timeGetDifference(currentTime,layer->ListenBeaconStart),
 										layer->Settings.BeaconListenTimeout)<0)
-		printf("Listen beacon and listened for %d < %d\n",(currentTime-layer->LastBeaconReceived),layer->Settings.BeaconListenTimeout);
-//#endif
+			LogWrite(layer->Log, LogLevel_Dump, "Listen beacon and listened for %ld < %ld\n",(currentTime-layer->LastBeaconReceived),layer->Settings.BeaconListenTimeout);
 		if(!layer->ListenBeacon)
 			layer->ListenBeaconStart = currentTime;
 		layer->ListenBeacon = true;
 		startRx(layer->Settings.BeaconChannel, layer->Settings.BeaconSeed);
+		LogWrite(layer->Log, LogLevel_DebugVerbose, "Start listen beacon channel 0x%02x seed 0x%04x", layer->Settings.BeaconChannel, layer->Settings.BeaconSeed);
 		return ListenChannel_Beacon;
 	}else{
-//#ifdef DEBUG_LEVEL1
-		printf("Listen for data 0x%02x\n",layer->ListeningChannel);
-//#endif
 		layer->Startup = false;
 		layer->ListenBeaconStart = INFINITY_TIME;
 		layer->ListenBeacon = false;
 		startRx(layer->ListeningChannel,layer->ListeningSeed);
+		LogWrite(layer->Log, LogLevel_DebugVerbose, "Start listen data channel 0x%02x seed 0x%04x", layer->ListeningChannel,layer->ListeningSeed);
 		return ListenChannel_Data;
 	}
 }
 int sendBeacon(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	layer->SentBeaconCounter++;
+	LogWrite(layer->Log, LogLevel_Information, "Sending beacon %d", layer->SentBeaconCounter);
 	//prepare
 	//calculate power
 	resetInterfaceState();
@@ -209,6 +231,7 @@ int sendBeacon(LoraIfaceLayer_T* layer){
 	layer->TransmitResetTime = timeAddInterval(timeGetCurrent(),calcTimeout(layer, layer->BeaconDataSize));
 	layer->LastBeaconSent = timeGetCurrent();
 	layer->Busy = true;
+	layer->LastIsBeacon = true;
 	return FUNC_RESULT_SUCCESS;
 }
 int sendData(LoraIfaceLayer_T* layer, IfaceAddr_T* dest, bool needResponse, bool isResponse,
@@ -219,12 +242,14 @@ int sendData(LoraIfaceLayer_T* layer, IfaceAddr_T* dest, bool needResponse, bool
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == data || 0 == size)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	LogWrite(layer->Log, LogLevel_Information, "Sending data to %b", dest, sizeof(IfaceAddr_T));
 
 	// find neighbor
 	NeighborInfo_T neighbor;
 	int neighborRes = neighborsGet(layer,dest,&neighbor);
 	// if not found send error
 	if(FUNC_RESULT_SUCCESS != neighborRes){
+		LogWrite(layer->Log, LogLevel_Warning, "Neighbor not found %b", dest, sizeof(IfaceAddr_T));
 		return FUNC_RESULT_FAILED_NEIGHBORS;
 	}
 	// prepare ifac
@@ -250,11 +275,15 @@ int sendData(LoraIfaceLayer_T* layer, IfaceAddr_T* dest, bool needResponse, bool
 	layer->CurrentCRC = calcPacketCrc(header,true);
 	header->CRC = layer->CurrentCRC;
 	layer->CurrentFullCRC = calcPacketCrc(header,false);
+	LogWrite(layer->Log, LogLevel_Dump, "Data is %b", fullData, SzIfaceHeader + size);
 	// start tx
 	startTx(neighbor.Frequency, neighbor.Seed, fullData, SzIfaceHeader + size);
 	// set up flags
 	layer->TransmitResetTime = timeAddInterval(timeGetCurrent(),calcTimeout(layer, SzIfaceHeader + size));
 	layer->WaitingResponse = needResponse;
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Waiting response %d", layer->WaitingResponse);
+	layer->LastIsBeacon = false;
+	layer->CurrentMsgAddr = *dest;
 	// free data
 	free(fullData);
 	layer->Busy = true;
@@ -269,45 +298,51 @@ int processReceivedMessage(LoraIfaceLayer_T* layer, RxData_T* data){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == data->Pointer || 0 == data->Size)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-
 	IfaceHeader_T* header = Iface_startHeader( data->Pointer );
 	layer->TotalPacketsCounter++;
 	//check crc
 	CRCvalue_T packetValue = header->CRC;
 	CRCvalue_T val = calcPacketCrc(header,true);
 	if(packetValue==val) {
-		printf("Valid CRC\n");
-		printf("TxPow %d Rssi %d Loss %d - ",header->TxPower,data->Rssi, header->TxPower-data->Rssi);
+		LogWrite(layer->Log, LogLevel_Information, "Received data from %b, size %hu", &(header->From), sizeof(IfaceAddr_T), data->Size);
+		LogWrite(layer->Log, LogLevel_DebugQuiet, "TxPow %d Rssi %d Loss %d",header->TxPower,data->Rssi, header->TxPower-data->Rssi);
+		LogWrite(layer->Log, LogLevel_Dump, "Data is %b", data->Pointer, data->Size);
 		// is response
 		//process response state
 		//check for valid
 		IfaceResponsePayload_T* payload = (IfaceResponsePayload_T *)Iface_startPayload( data->Pointer );
 		//if valid
-		if(layer->CurrentCRC == payload->NormalMessageCrc && layer->CurrentFullCRC == payload->FullMessageCrc)
+		if(header->Response && layer->CurrentCRC == payload->NormalMessageCrc && layer->CurrentFullCRC == payload->FullMessageCrc)
 		{
+			LogWrite(layer->Log, LogLevel_DebugQuiet, "Valid Response for message %b",&(layer->CurrentMid), sizeof(MessageId_T));
 			//reset waiting
 			layer->WaitingResponse = false;
 			layer->WaitingResponseTime = INFINITY_TIME;
+			int updateRes = neighborsUpdateSendtrys(layer, &(layer->CurrentMsgAddr), true);
 			int notifyRes = processIfaceMsgState(layer, &(layer->CurrentMid), IfacePackState_Responsed);
 			layer->Busy = false;
 		}
 		// is beacons
 		if(header->Beacon){
-			printf("Beacon %d from 0x%08x\n",layer->BeaconCounter, header->From);
 			layer->BeaconCounter++;
+			LogWrite(layer->Log, LogLevel_DebugQuiet, "Beacon %d",layer->BeaconCounter);
 			layer->LastBeaconReceived = timeGetCurrent();
 		}
 		// is data
 		if(header->Size!=0 && !header->Response && !header->Beacon) {
+			LogWrite(layer->Log, LogLevel_DebugQuiet, "Data %d bytes", header->Size);
 			// process data
 			int notifyRes = processIfaceReceived(layer, &(header->From), Iface_startPayload(header), header->Size);
 		}
 		// if need response
 		if(header->NeedResponse){
+			LogWrite(layer->Log, LogLevel_DebugVerbose, "Message need response");
 			IfaceResponsePayload_T payload = {0};
 			payload.NormalMessageCrc = val;
 			payload.FullMessageCrc = calcPacketCrc(header,false);
+			LogWrite(layer->Log, LogLevel_Information, "Sending response");
 			int responseRes = sendData(layer, &(header->From), false, true, &payload, sizeof(payload));
+			LogErrMoar(layer->Log, LogLevel_DebugQuiet, responseRes, "Sending response result");
 		}
 		// update neighbors
 		if(!layer->MonitorMode)
@@ -327,7 +362,9 @@ int interfaceStateProcessing(LoraIfaceLayer_T* layer){
 	bool rts = readyToSend() && !layer->WaitingResponse && !layer->MonitorMode && !layer->Busy;
 	// waiting response timeout
 	if(layer->WaitingResponse && timeCompare(currentTime, layer->WaitingResponseTime)>0){
+		LogWrite(layer->Log, LogLevel_Warning, "No response in timeout");
 		// logic here
+		int updateRes = neighborsUpdateSendtrys(layer, &(layer->CurrentMsgAddr), false);
 		// reset busy
 		layer->Busy = false;
 		// reset time
@@ -340,18 +377,17 @@ int interfaceStateProcessing(LoraIfaceLayer_T* layer){
 	// send timeout
 	if(timeCompare(currentTime, layer->TransmitResetTime)>0)
 	{
+		LogWrite(layer->Log, LogLevel_Warning, "Reseting lora interface");
 		// reset lora
-		Init_LORA(&(layer->Settings.LORA_Settings));
+		Init_LORA(&(layer->Settings.LORA_Settings), layer->Log);
 		resetInterfaceState();
 		// reset busy
 		layer->Busy = false;
 		// reset time
 		layer->TransmitResetTime = INFINITY_TIME;
-
 	}
 
 	if(events.RxDone){
-		printf("rx done\n");
 		resetInterfaceState();
 		processReceivedMessage(layer,&recievedData);
 		// try to listen
@@ -361,13 +397,16 @@ int interfaceStateProcessing(LoraIfaceLayer_T* layer){
 	}
 
 	if(events.TxDone){
-		printf("tx done\n");
 		layer->TransmitResetTime = INFINITY_TIME;
-		if(layer->WaitingResponse)
+		if(layer->WaitingResponse) {
 			layer->WaitingResponseTime = timeAddInterval(currentTime, layer->Settings.WaitingResponseTimeout);
+			LogWrite(layer->Log, LogLevel_DebugVerbose, "Setting wait response time");
+		}
 		else {
+			LogWrite(layer->Log, LogLevel_DebugVerbose, "Sending done");
 			layer->Busy = false;
-			processIfaceMsgState(layer, &(layer->CurrentMid), IfacePackState_Sent);
+			if(!layer->LastIsBeacon)
+				processIfaceMsgState(layer, &(layer->CurrentMid), IfacePackState_Sent);
 		}
 		resetInterfaceState();
 		startListen(layer);
@@ -376,14 +415,16 @@ int interfaceStateProcessing(LoraIfaceLayer_T* layer){
 	// if interface is still free and time to send beacons
 	if(rts &&
 			timeCompare(timeGetDifference(timeGetCurrent(), layer->LastBeaconSent),layer->BeaconSendInterval)>0){
-		printf("Sending beacon %d\n", timeGetDifference(timeGetCurrent(), layer->LastBeaconSent));
 		//send beacons
 		sendBeacon(layer);
 
 		if(timeCompare(timeGetDifference(timeGetCurrent(), layer->StartupTime),
-					   layer->Settings.BeaconStartupDuration)>0)
-			layer->BeaconSendInterval = layer->Settings.BeaconSendInterval+
-									((rand()%layer->Settings.BeaconSendDeviation)-layer->Settings.BeaconSendDeviation/2);
+					   layer->Settings.BeaconStartupDuration)>0) {
+			layer->BeaconSendInterval = layer->Settings.BeaconSendInterval +
+										((rand() % layer->Settings.BeaconSendDeviation) -
+										 layer->Settings.BeaconSendDeviation / 2);
+			LogWrite(layer->Log, LogLevel_Dump, "Changing beacon send interval to %d", layer->BeaconSendInterval);
+		}
 		// TODO next event time calculation here
 	}
 

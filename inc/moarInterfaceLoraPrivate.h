@@ -24,6 +24,7 @@
 #define CHANNEL_PROCESSING_RULES_COUNT		5
 #define IFACE_ADDR_SIZE						4
 #define NEIGHBORS_TABLE_SIZE				37
+#define LOG_FILE_PATH						"/tmp/lora_iface.log"
 typedef struct {
 	uint8_t Address[IFACE_ADDR_SIZE];
 }IfaceAddr_T;
@@ -61,6 +62,7 @@ typedef struct{
 	bool 					Startup;
 	bool					WaitingResponse;
 	bool 					MonitorMode;
+	bool 					LastIsBeacon;
 	// timeouts
 	moarTime_T 				LastBeacon;
 	moarTime_T 				LastBeaconSent;
@@ -76,10 +78,14 @@ typedef struct{
 	CRCvalue_T 				CurrentCRC;
 	CRCvalue_T 				CurrentFullCRC;
 	MessageId_T				CurrentMid;
+	IfaceAddr_T				CurrentMsgAddr;
 	//stats
 	int 					BeaconCounter;
+	int 					SentBeaconCounter;
 	int 					TotalPacketsCounter;
 	int 					BrokenCounter;
+	// logging
+	LogHandle_T 			Log;
 }LoraIfaceLayer_T;
 
 #pragma pack(push, 1)

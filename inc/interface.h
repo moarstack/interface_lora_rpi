@@ -49,8 +49,6 @@ typedef struct{
 //status
 
 
-
-#pragma pack(pop)
 //states
 typedef enum{
 	TransmissionState_Monitor,

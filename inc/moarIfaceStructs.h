@@ -63,4 +63,5 @@ typedef struct{
 			NormalMessageCrc;
 } IfaceResponsePayload_T;
 
+#pragma pack(pop)
 #endif //MOARSTACK_MOARIFACESTRUCTS_H

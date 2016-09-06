@@ -10,7 +10,7 @@
 
 #include "stdint.h"
 #include "lora.h"
-
+#include <moarLogger.h>
 typedef struct {
 	uint8_t RxDone:1;
 	uint8_t TxDone:1;
@@ -46,7 +46,7 @@ extern uint16_t constantMessageOverhead;
 //void CadDoneHandler();
 //void CadDetectedHandler();
 int8_t setPower(int8_t value, bool boost);
-bool Init_LORA(LORA_Settings_T* settings);
+bool Init_LORA(LORA_Settings_T* settings, LogHandle_T handle);
 void resetInterfaceState();
 //start rx
 uint8_t startRx(uint8_t channel, uint16_t seed);

@@ -14,10 +14,10 @@
 
 #define RAND_BYTES	4
 
-unsigned char brand( unsigned short * seed_place );
+unsigned char ibrand( unsigned short * seed_place );
 
-void srand( unsigned int seed );
+void isrand( unsigned int seed );
 
-int rand( void );
+int irand( void );
 
 #endif // STDFUNC_H_

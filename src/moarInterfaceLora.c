@@ -19,11 +19,13 @@ int initEpoll(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	// setup settings
+	LogWrite(layer->Log, LogLevel_DebugQuiet, "Epoll init");
 	layer->EpollCount = EPOLL_EVENTS_COUNT;
 	layer->EpollTimeout = EPOLL_TIMEOUT;
 	//epoll init here
 	memset(layer->EpollEvent,0,layer->EpollCount*sizeof(struct epoll_event));
 	//init
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Creating epoll");
 	layer->EpollHandler = epoll_create(1);
 	if(-1 == layer->EpollHandler) {
 		return FUNC_RESULT_FAILED;
@@ -32,6 +34,7 @@ int initEpoll(LoraIfaceLayer_T* layer){
 	struct epoll_event epollEventChannel;
 	epollEventChannel.events = EPOLL_CHANNEL_EVENTS;
 	epollEventChannel.data.fd = layer->ChannelSocket;
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Add channel layer handler");
 	int channelRes = epoll_ctl(layer->EpollHandler, EPOLL_CTL_ADD, layer->ChannelSocket, &epollEventChannel);
 	if(0 != channelRes)
 		return FUNC_RESULT_FAILED;
@@ -41,6 +44,7 @@ int initEpoll(LoraIfaceLayer_T* layer){
 	epollEventSignals.data.fd = layer->SignalFd;
 	if(-1 == epollEventSignals.data.fd)
 		return FUNC_RESULT_FAILED;
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Add signal handler");
 	int signalRes = epoll_ctl(layer->EpollHandler, EPOLL_CTL_ADD, epollEventSignals.data.fd , &epollEventSignals);
 	if(0 != signalRes)
 		return FUNC_RESULT_FAILED;
@@ -52,6 +56,7 @@ int ifaceInit(LoraIfaceLayer_T* layer, void* arg){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == arg)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	LogWrite(layer->Log, LogLevel_DebugQuiet, "Interface init");
 	MoarIfaceStartupParams_T* params = (MoarIfaceStartupParams_T*)arg;
 	//setup socket to channel
 	if(NULL == params->socketToChannel)
@@ -59,6 +64,7 @@ int ifaceInit(LoraIfaceLayer_T* layer, void* arg){
 	// conect and add socket
 	strncpy( layer->ChannelSocketPath, params->socketToChannel, SOCKET_FILEPATH_SIZE );
 	// connect
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Open socket to channel");
 	int result = SocketOpenFile( layer->ChannelSocketPath, false, &(layer->ChannelSocket));
 	// socket should be setted
 	if(FUNC_RESULT_SUCCESS != result)
@@ -70,12 +76,14 @@ int ifaceInit(LoraIfaceLayer_T* layer, void* arg){
 	layer->ChannelProcessingRules[3] = MakeProcessingRule(LayerCommandType_None, NULL);
 
 	//init signals
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Set up signal mask");
 	sigemptyset (&(layer->SignalMask));
 	sigaddset(&(layer->SignalMask),SIGUSR1);
 	int procRes = sigprocmask(SIG_BLOCK, &(layer->SignalMask),NULL);
 	if(0 != procRes)
 		return FUNC_RESULT_FAILED;
 	// init signal socket
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Creating file handler from signal");
 	layer->SignalFd = signalfd(-1,&(layer->SignalMask), 0);
 	if(-1 == layer->SignalFd)
 		return FUNC_RESULT_FAILED;
@@ -86,6 +94,7 @@ int ifaceInit(LoraIfaceLayer_T* layer, void* arg){
 int registerInterface(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	LogWrite(layer->Log, LogLevel_DebugQuiet, "Interface registration");
 	//send register command
 	IfaceRegisterMetadata_T metadata = {0};
 	metadata.Length = IFACE_ADDR_SIZE;
@@ -97,35 +106,51 @@ int registerInterface(LoraIfaceLayer_T* layer){
 	command.DataSize = 0;
 	command.MetaData = &metadata;
 	command.MetaSize = sizeof(IfaceRegisterMetadata_T);
-
+	LogWrite(layer->Log, LogLevel_DebugVerbose, "Interface registration command sending");
 	int res = WriteCommand(layer->ChannelSocket, &command);
-
+	LogErrMoar(layer->Log,LogLevel_DebugVerbose, res, "Interface registration result");
 	return res;
 }
 
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	LoraIfaceLayer_T layer = {0};
+	int logOpen = LogOpen(LOG_FILE_PATH, &(layer.Log));
+	LogSetLevelLog(layer.Log, LogLevel_Dump);
+	LogSetLevelDump(layer.Log, LogLevel_Dump);
+	LogWrite(layer.Log, LogLevel_Critical, ">>>>>>>>>>>>>>>>>>>>>>>>> LORA Interface layer started <<<<<<<<<<<<<<<<<<<<<<<<<");
 	int initRes = ifaceInit(&layer, arg);
-	if(FUNC_RESULT_SUCCESS != initRes)
+	if(FUNC_RESULT_SUCCESS != initRes) {
+		LogErrMoar(layer.Log,LogLevel_Critical, initRes, "Layer init failed");
 		return NULL;
+	}
 	// load configuration
 	// init settings
+	LogWrite(layer.Log, LogLevel_DebugVerbose, "Init interface internal settings");
 	Init_IfaceSettings(&(layer.Settings));
 	// init internal interface
 	int ifaceRes = interfaceInit(&layer);
+	if(FUNC_RESULT_SUCCESS != ifaceRes) {
+		LogErrMoar(layer.Log,LogLevel_Critical, ifaceRes, "Low level interface init failed");
+		return NULL;
+	}
 	// init epoll
 	int epollInitRes = initEpoll(&layer);
-	if(FUNC_RESULT_SUCCESS != epollInitRes)
+	if(FUNC_RESULT_SUCCESS != epollInitRes) {
+		LogErrMoar(layer.Log,LogLevel_Critical, epollInitRes, "Epoll init failed");
 		return NULL;
+	}
 	//start registration here
 	int regRes = registerInterface(&layer);
-	if(FUNC_RESULT_SUCCESS != regRes)
+	if(FUNC_RESULT_SUCCESS != regRes) {
+		LogErrMoar(layer.Log,LogLevel_Critical, regRes, "Interface registration failed");
 		return NULL;
+	}
 	// enable process
 	layer.Running = true;
 	//layer.Busy = true;
 	while(layer.Running) {
 		moarTime_T start = timeGetCurrent();
+		printf("time start%lld\n", start);
 		if(!layer.Busy) {
 			// in poll
 			int epollRes = epoll_pwait(layer.EpollHandler, layer.EpollEvent,
@@ -143,14 +168,18 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 					processRes = ProcessCommand(&layer, fd, event, EPOLL_CHANNEL_EVENTS, layer.ChannelProcessingRules);
 				}
 				else if(fd == layer.SignalFd) { //signal here
+					LogWrite(layer.Log, LogLevel_DebugVerbose, "Processing signal");
 					struct signalfd_siginfo info;
 					ssize_t bytes = read(fd, &info, sizeof(info));
+					processRes = FUNC_RESULT_SUCCESS;
 				} else{
 					// wtf? i don`t add another sockets
+					LogWrite(layer.Log, LogLevel_Warning, "Unknown file handler event");
 				}
 				//error processing
 				if (FUNC_RESULT_SUCCESS != processRes) {
 					// we have problems
+					LogErrMoar(layer.Log, LogLevel_Warning, processRes, "Command processing problem");
 					// return NULL;
 				}
 			}
@@ -162,7 +191,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 			timeout.tv_nsec = (layer.EpollTimeout - timeout.tv_sec*1000)*1000000;
 			int res = sigtimedwait(&(layer.SignalMask), NULL, &(timeout));
 		}
-		printf("time %d\n",timeGetCurrent()-start);
+		printf("time %lld\n",timeGetCurrent()-start);
 		int stateProcess = interfaceStateProcessing(&layer);
 
 	}
