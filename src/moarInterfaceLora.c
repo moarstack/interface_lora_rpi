@@ -151,7 +151,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	//layer.Busy = true;
 	while(layer.Running) {
 		moarTime_T start = timeGetCurrent();
-		printf("time start%lld\n", start);
+//		printf("time start%lld\n", start);
 		if(!layer.Busy) {
 			// in poll
 			int epollRes = epoll_pwait(layer.EpollHandler, layer.EpollEvent,
@@ -192,7 +192,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 			timeout.tv_nsec = (layer.EpollTimeout - timeout.tv_sec*1000)*1000000;
 			int res = sigtimedwait(&(layer.SignalMask), NULL, &(timeout));
 		}
-		printf("time %lld\n",timeGetCurrent()-start);
+//		printf("time %lld\n",timeGetCurrent()-start);
 		int stateProcess = interfaceStateProcessing(&layer);
 		if(FUNC_RESULT_SUCCESS != stateProcess)
 			break;
