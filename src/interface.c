@@ -134,22 +134,22 @@ void updateNeighbor(bool add, uint8_t index, IfaceHeader_T* header, int16_t rssi
 #endif
 }
 
-void updateNeighbors(IfaceHeader_T* header, int16_t rssi){
-	if(neighborsCount<ifaceSettings->NeighborsCount){
-		//search
-		int index = findNeighbor(header->From);
-		//if found
-		if(index!=-1)
-			updateNeighbor(false, index,header,rssi);
-		//if not found and beacon
-		if(index==-1 && header->Beacon &&
-				(rssi > ifaceSettings->BeaconRssiMinThreshold && rssi < ifaceSettings->BeaconRssiMaxThreshold)){
-			updateNeighbor(true, neighborsCount,header,rssi);
-			neighborsCount++;
-		}
-	}
-	//else find and replace
-}
+//void updateNeighbors(IfaceHeader_T* header, int16_t rssi){
+//	if(neighborsCount<ifaceSettings->NeighborsCount){
+//		//search
+//		int index = findNeighbor(header->From);
+//		//if found
+//		if(index!=-1)
+//			updateNeighbor(false, index,header,rssi);
+//		//if not found and beacon
+//		if(index==-1 && header->Beacon &&
+//				(rssi > ifaceSettings->BeaconRssiMinThreshold && rssi < ifaceSettings->BeaconRssiMaxThreshold)){
+//			updateNeighbor(true, neighborsCount,header,rssi);
+//			neighborsCount++;
+//		}
+//	}
+//	//else find and replace
+//}
 
 void updateLastTrys(IfaceAddr_T addr, bool responded){
 	int8_t index = findNeighbor(addr);

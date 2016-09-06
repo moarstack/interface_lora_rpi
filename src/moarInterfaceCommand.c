@@ -16,9 +16,25 @@ int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == command->MetaData)
+		return FUNC_RESULT_FAILED_ARGUMENT;
 	LoraIfaceLayer_T* layer = (LoraIfaceLayer_T*)layerRef;
-	//logic here
-	return FUNC_RESULT_SUCCESS;
+	ChannelSendMetadata_T* metadata = (ChannelSendMetadata_T*)command->MetaData;
+	// check size
+	IfacePackState_T state = IfacePackState_Notsent;
+	if(NULL != command->Data && 0 != command->DataSize && !layer->Busy) {
+		int sendRes = sendData(layer, &(metadata->To), metadata->NeedResponse, false, command->Data, command->DataSize);
+		if (FUNC_RESULT_SUCCESS == sendRes) {
+			//set mid
+			layer->CurrentMid = metadata->Id;
+			// no notify here, notification from tx done handler
+			return FUNC_RESULT_SUCCESS;
+		}
+		if(FUNC_RESULT_FAILED_NEIGHBORS == sendRes)
+			state = IfacePackState_UnknownDest;
+	}
+	int notifyRes = processIfaceMsgState(layer, &(metadata->Id), state);
+	return notifyRes;
 }
 
 int processBeaconUpdateCommand(void* layerRef, int fd, LayerCommandStruct_T* command){

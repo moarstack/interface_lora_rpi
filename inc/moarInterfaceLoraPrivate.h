@@ -67,15 +67,19 @@ typedef struct{
 	moarTime_T 				StartupTime;
 	moarTime_T 				LastBeaconReceived;
 	moarTime_T 				ListenBeaconStart;
-	moarTime_T 				TransmitResetTimeout;
-	moarTime_T 				TransmitStartTime;
+	moarTime_T 				TransmitResetTime;
 	moarTime_T				BeaconSendInterval;
+	moarTime_T 				WaitingResponseTime;
 	// other
 	uint16_t				NetSpeed;
 	// current message
 	CRCvalue_T 				CurrentCRC;
 	CRCvalue_T 				CurrentFullCRC;
 	MessageId_T				CurrentMid;
+	//stats
+	int 					BeaconCounter;
+	int 					TotalPacketsCounter;
+	int 					BrokenCounter;
 }LoraIfaceLayer_T;
 
 #pragma pack(push, 1)

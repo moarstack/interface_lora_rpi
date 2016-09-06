@@ -21,6 +21,7 @@ typedef uint32_t	FreqVal_T;		// type for frequency value (used in calculatings, 
 typedef uint16_t	FreqSeed_T;		// type for frequency list seed
 
 typedef enum{
+	ListenChannel_None,
 	ListenChannel_Data,
 	ListenChannel_Beacon,
 	ListenChannel_Monitor,

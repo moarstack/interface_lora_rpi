@@ -9,14 +9,9 @@
 #include "port.h"
 #include "hwInterface.h"
 #include "stdfunc.h"
-#include "string.h"
 #include "moarInterfaceLoraPrivate.h"
 #include <pthread.h>
 #include <zconf.h>
-#include <bits/sigthread.h>
-#include <bits/signum.h>
-#include <signal.h>
-#include <moarIfaceStructs.h>
 
 #define inline
 
@@ -29,7 +24,7 @@
 #define DEBUG_LEVEL1
 #define DEBUG_LEVEL2
 #define DEBUG_LEVEL3
-
+#define DEBUG_THREADS
 
 pthread_t thread = 0;
 //can be replaced by on fly generation
@@ -126,7 +121,7 @@ void CadDetectedHandler(){
 	pthread_kill(thread, SIGUSR1);
 }
 
-
+#ifdef DEBUG_THREADS
 // testing
 
 void* riseTxDone(void* arg){
@@ -138,6 +133,7 @@ void* riseTxDone(void* arg){
 }
 
 //////////
+#endif
 
 void resetInterfaceState(){
 	LORA_ResetIrqFlags();
@@ -169,9 +165,10 @@ uint8_t startTx(uint8_t channel, uint16_t seed, uint8_t* data, uint16_t size){
 	LORA_StartTx(getFrequency(channel),data,size);
 	events.TxDone = 0;
 	interfaceState = InterfaceState_Transmit;
-
+#ifdef DEBUG_THREADS
 	pthread_t newthread;
 	pthread_create(&(newthread),NULL, riseTxDone, NULL);
+#endif
 	return 0;
 }
 //message avail
@@ -431,6 +428,7 @@ inline bool Init_Frequency_Division(LORA_Settings_T* settings){
 	return true;
 }
 
+#ifdef DEBUG_THREADS
 void* test(void* arg){
 	//printf("start\n");
 
@@ -443,6 +441,7 @@ void* test(void* arg){
 	header->Response  = 0;
 	header->Size = 0;
 	header->TxPower = 0;
+	header->CRC = 34300;
 
 	footer->FreqSeed = 1;
 	footer->FreqStart = 1;
@@ -461,6 +460,7 @@ void* test(void* arg){
 		}
 	}
 }
+#endif
 
 //lora init
 bool Init_LORA(LORA_Settings_T* settings){
@@ -484,7 +484,9 @@ bool Init_LORA(LORA_Settings_T* settings){
 	res &= Init_LORA_handlers(settings);
 	interfaceState = InterfaceState_On;
 	recievedData.Processed = 1;
+#ifdef DEBUG_THREADS
 	pthread_t newthread;
 	pthread_create(&(newthread),NULL, test, NULL);
+#endif
 	return res;
 }
