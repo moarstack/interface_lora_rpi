@@ -46,9 +46,9 @@ int irand( void )
 {
 
 	register int	res = 0;
-	res |= brand( reg ) << 24;
-	res |= brand( reg + 1 ) << 16;
-	res |= brand( reg ) << 8;
-	res |= brand( reg + 1 );
+	res |= ibrand( reg ) << 24;
+	res |= ibrand( reg + 1 ) << 16;
+	res |= ibrand( reg ) << 8;
+	res |= ibrand( reg + 1 );
 	return res;
 }

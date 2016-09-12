@@ -94,8 +94,10 @@ int interfaceInit(LoraIfaceLayer_T* layer){
 	layer->ListeningSeed = rand() % UINT16_MAX;
 	LogWrite(layer->Log, LogLevel_DebugQuiet, "Setting channel 0x%02x and seed 0x%04x", layer->ListeningChannel, layer->ListeningSeed);
 	layer->StartupTime = timeGetCurrent();
+	layer->LastBeaconSent = timeGetCurrent();
 	layer->BeaconSendInterval = layer->Settings.BeaconStartupInterval;
 	layer->TransmitResetTime = INFINITY_TIME;
+	layer->WaitingResponseTime = INFINITY_TIME;
 	// reset interface state here
 	return FUNC_RESULT_SUCCESS;
 }
@@ -183,13 +185,13 @@ IfaceListenChannel_T startListen(LoraIfaceLayer_T* layer){
 			LogWrite(layer->Log, LogLevel_Dump, "No neighbors\n");
 		if(timeCompare(timeGetDifference(currentTime, layer->LastBeaconReceived),
 				 layer->Settings.BeaconListenForce) > 0)
-			LogWrite(layer->Log, LogLevel_Dump, "Time from last beacon %ld > %d\n",(currentTime-layer->LastBeaconReceived),layer->Settings.BeaconListenForce);
+			LogWrite(layer->Log, LogLevel_Dump, "Time from last beacon %lld > %d\n",(currentTime-layer->LastBeaconReceived),layer->Settings.BeaconListenForce);
 		if(timeCompare(timeGetDifference(currentTime, layer->StartupTime),
 				layer->Settings.BeaconListenStartup) < 0)
-			LogWrite(layer->Log, LogLevel_Dump, "Current time %d < %d\n",currentTime-layer->StartupTime,layer->Settings.BeaconListenStartup);
+			LogWrite(layer->Log, LogLevel_Dump, "Current time %lld < %d\n",currentTime-layer->StartupTime,layer->Settings.BeaconListenStartup);
 		if(layer->ListenBeacon && timeCompare(timeGetDifference(currentTime,layer->ListenBeaconStart),
 										layer->Settings.BeaconListenTimeout)<0)
-			LogWrite(layer->Log, LogLevel_Dump, "Listen beacon and listened for %ld < %ld\n",(currentTime-layer->LastBeaconReceived),layer->Settings.BeaconListenTimeout);
+			LogWrite(layer->Log, LogLevel_Dump, "Listen beacon and listened for %lld < %d\n",(currentTime-layer->LastBeaconReceived),layer->Settings.BeaconListenTimeout);
 		if(!layer->ListenBeacon)
 			layer->ListenBeaconStart = currentTime;
 		layer->ListenBeacon = true;
@@ -230,6 +232,8 @@ int sendBeacon(LoraIfaceLayer_T* layer){
 	// timeouts
 	layer->TransmitResetTime = timeAddInterval(timeGetCurrent(),calcTimeout(layer, layer->BeaconDataSize));
 	layer->LastBeaconSent = timeGetCurrent();
+	layer->TransmitStartTime = timeGetCurrent();
+	layer->CurrentSize = layer->BeaconDataSize;
 	layer->Busy = true;
 	layer->LastIsBeacon = true;
 	return FUNC_RESULT_SUCCESS;
@@ -279,10 +283,12 @@ int sendData(LoraIfaceLayer_T* layer, IfaceAddr_T* dest, bool needResponse, bool
 	// start tx
 	startTx(neighbor.Frequency, neighbor.Seed, fullData, SzIfaceHeader + size);
 	// set up flags
+	layer->TransmitStartTime = timeGetCurrent();
 	layer->TransmitResetTime = timeAddInterval(timeGetCurrent(),calcTimeout(layer, SzIfaceHeader + size));
 	layer->WaitingResponse = needResponse;
 	LogWrite(layer->Log, LogLevel_DebugVerbose, "Waiting response %d", layer->WaitingResponse);
 	layer->LastIsBeacon = false;
+	layer->CurrentSize = SzIfaceHeader + size;
 	layer->CurrentMsgAddr = *dest;
 	// free data
 	free(fullData);
@@ -398,6 +404,16 @@ int interfaceStateProcessing(LoraIfaceLayer_T* layer){
 
 	if(events.TxDone){
 		layer->TransmitResetTime = INFINITY_TIME;
+		//calculate net speed
+		if(layer->NetSpeed == 0){
+			moarTime_T transmitTime = timeGetDifference(currentTime, layer->TransmitStartTime);
+			if(transmitTime != 0) {
+				LogWrite(layer->Log, LogLevel_Dump, "Transmission time %lld", transmitTime);
+				uint32_t messageSize = (uint32_t) ((layer->CurrentSize + constantMessageOverhead) * 1000);
+				layer->NetSpeed = messageSize / transmitTime;
+				LogWrite(layer->Log, LogLevel_Dump, "Transmission speed %d bytes/sec", layer->NetSpeed);
+			}
+		}
 		if(layer->WaitingResponse) {
 			layer->WaitingResponseTime = timeAddInterval(currentTime, layer->Settings.WaitingResponseTimeout);
 			LogWrite(layer->Log, LogLevel_DebugVerbose, "Setting wait response time");
@@ -414,20 +430,30 @@ int interfaceStateProcessing(LoraIfaceLayer_T* layer){
 	}
 	// if interface is still free and time to send beacons
 	if(rts &&
-			timeCompare(timeGetDifference(timeGetCurrent(), layer->LastBeaconSent),layer->BeaconSendInterval)>0){
+			timeCompare(timeGetDifference(currentTime, layer->LastBeaconSent),layer->BeaconSendInterval)>0){
 		//send beacons
 		sendBeacon(layer);
 
-		if(timeCompare(timeGetDifference(timeGetCurrent(), layer->StartupTime),
+		if(timeCompare(timeGetDifference(currentTime, layer->StartupTime),
 					   layer->Settings.BeaconStartupDuration)>0) {
 			layer->BeaconSendInterval = layer->Settings.BeaconSendInterval +
 										((rand() % layer->Settings.BeaconSendDeviation) -
 										 layer->Settings.BeaconSendDeviation / 2);
 			LogWrite(layer->Log, LogLevel_Dump, "Changing beacon send interval to %d", layer->BeaconSendInterval);
 		}
-		// TODO next event time calculation here
 	}
 
+	moarTime_T min = EPOLL_TIMEOUT;
+	moarTime_T toWaiting = timeGetDifference(layer->WaitingResponseTime, currentTime);
+	min = (timeCompare(min, toWaiting) < 0) ? min : toWaiting;
+	moarTime_T toTransmit = timeGetDifference(layer->TransmitResetTime, currentTime);
+	min = (timeCompare(min, toTransmit) < 0) ? min : toTransmit;
+	moarTime_T toBeacon = timeGetDifference(timeAddInterval(layer->LastBeaconSent,layer->BeaconSendInterval), currentTime);
+	min = (timeCompare(min, toBeacon) < 0) ? min : toBeacon;
+	min = min>0 ? min: EPOLL_TIMEOUT;
+	layer->EpollTimeout = min;
+
+	LogWrite(layer->Log, LogLevel_Dump, "Setting next epoll timeout %d", layer->EpollTimeout);
 
 	return FUNC_RESULT_SUCCESS;
 }

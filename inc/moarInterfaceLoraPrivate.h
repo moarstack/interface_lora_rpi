@@ -19,7 +19,7 @@
 
 #define EPOLL_SOCKETS_COUNT 				2
 #define EPOLL_CHANNEL_EVENTS 				EPOLLIN
-#define EPOLL_TIMEOUT						1000
+#define EPOLL_TIMEOUT						10000
 #define EPOLL_EVENTS_COUNT					EPOLL_SOCKETS_COUNT
 #define CHANNEL_PROCESSING_RULES_COUNT		5
 #define IFACE_ADDR_SIZE						4
@@ -70,6 +70,7 @@ typedef struct{
 	moarTime_T 				LastBeaconReceived;
 	moarTime_T 				ListenBeaconStart;
 	moarTime_T 				TransmitResetTime;
+	moarTime_T 				TransmitStartTime;
 	moarTime_T				BeaconSendInterval;
 	moarTime_T 				WaitingResponseTime;
 	// other
@@ -79,6 +80,7 @@ typedef struct{
 	CRCvalue_T 				CurrentFullCRC;
 	MessageId_T				CurrentMid;
 	IfaceAddr_T				CurrentMsgAddr;
+	PayloadSize_T 			CurrentSize;
 	//stats
 	int 					BeaconCounter;
 	int 					SentBeaconCounter;
