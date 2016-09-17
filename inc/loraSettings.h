@@ -27,9 +27,9 @@
 #if defined(BOARD_NXP_LPCXPRESSO_1347) && !defined(LORA_PABOOST_FORCE)
 #define LORA_PABOOST 0x00
 #else
-//#define LORA_PABOOST 0x01
-#define LORA_PABOOST 0x00
-//#define LORA_PABOOST_ENABLE
+#define LORA_PABOOST 0x01
+//#define LORA_PABOOST 0x00
+#define LORA_PABOOST_ENABLE
 #endif
 #define LORA_MAXPOWER 0x00
 #define LORA_OUTPUTPOWER 0x0F

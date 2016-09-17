@@ -12,7 +12,7 @@
 #include "moarInterfaceLoraPrivate.h"
 #include <pthread.h>
 #include <zconf.h>
-
+#include <loraSettings.h>
 #define inline
 
 #define LORA_HEADER_OVERHEAD 4
