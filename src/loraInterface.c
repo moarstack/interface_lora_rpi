@@ -83,16 +83,21 @@ int interfaceInit(LoraIfaceLayer_T* layer){
 //	if(!res)
 //		return FUNC_RESULT_FAILED;
 
+	//randomizing address
+	srand(timeGetCurrent() & 0xFFFFFFFF);
+	for(int i=0; i<IFACE_ADDR_SIZE; i++)
+		layer->LocalAddress.Address[i] = (uint8_t)(rand()&0xFF);
+	LogWrite(layer->Log, LogLevel_Information, "Setting address %b", &(layer->LocalAddress), sizeof(IfaceAddr_T));
+	layer->ListeningChannel = rand() % channelsCount;
+	layer->ListeningSeed = rand() % UINT16_MAX;
+	LogWrite(layer->Log, LogLevel_DebugQuiet, "Setting channel 0x%02x and seed 0x%04x", layer->ListeningChannel, layer->ListeningSeed);
+
 	// create beacon packet here
 	int beaconRes = interfaceMakeBeacon(layer, NULL, 0);
 	if(FUNC_RESULT_SUCCESS != beaconRes) {
 		LogErrMoar(layer->Log, LogLevel_Critical, neighborsRes, "Beacon creating failed");
 		return beaconRes;
 	}
-	srand(timeGetCurrent() & 0xFFFFFFFF);
-	layer->ListeningChannel = rand() % channelsCount;
-	layer->ListeningSeed = rand() % UINT16_MAX;
-	LogWrite(layer->Log, LogLevel_DebugQuiet, "Setting channel 0x%02x and seed 0x%04x", layer->ListeningChannel, layer->ListeningSeed);
 	layer->StartupTime = timeGetCurrent();
 	layer->LastBeaconSent = timeGetCurrent();
 	layer->BeaconSendInterval = layer->Settings.BeaconStartupInterval;
