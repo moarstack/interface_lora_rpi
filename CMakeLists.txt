@@ -17,7 +17,8 @@ else(${DISABLE_IO})
     add_definitions(-DENABLE_IO)
 endif(${DISABLE_IO})
 
-message(${CMAKE_C_FLAGS})
+#message(${CMAKE_C_FLAGS})
+
 #add shared layers headers
 include_directories(../shared/inc)
 
