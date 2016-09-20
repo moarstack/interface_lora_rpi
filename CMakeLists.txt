@@ -1,12 +1,23 @@
 cmake_minimum_required(VERSION 3.0)
-project(libmoar_interface_lora_rpi) 
+project(libmoar_interface_lora_rpi)
 
 set(LIBRARY_OUTPUT_PATH ../../lib)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -g3 -fPIC")
-
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -g3 -fPIC")
+message("CFALGS "${CMAKE_C_FLAGS})
 file(GLOB SRC_FILES
-    "src/*.c"
-)
+        "src/*.c"
+        )
+if(${DISABLE_IO})
+    message("IO disabled")
+else(${DISABLE_IO})
+    message("IO enabled")
+    add_definitions(-DENABLE_IO)
+endif(${DISABLE_IO})
+
+if(${EMULATE_IO})
+    message("Emulated IO")
+    add_definitions(-DDEBUG_THREADS)
+endif(${EMULATE_IO})
 
 #add shared layers headers
 include_directories(../shared/inc)

@@ -13,6 +13,9 @@
 #include <pthread.h>
 #include <zconf.h>
 #include <loraSettings.h>
+#include <moarIfaceStructs.h>
+#include <moarInterfaceLoraPrivate.h>
+
 #define inline
 
 #define LORA_HEADER_OVERHEAD 4
@@ -24,7 +27,7 @@
 #define DEBUG_LEVEL1
 #define DEBUG_LEVEL2
 #define DEBUG_LEVEL3
-#define DEBUG_THREADS
+//#define DEBUG_THREADS
 
 pthread_t thread = 0;
 LogHandle_T logger;
@@ -437,6 +440,8 @@ void* test(void* arg){
 	IfaceHeader_T* header = (IfaceHeader_T*)data;
 	IfaceFooter_T* footer = (IfaceFooter_T*)(data+sizeof(IfaceHeader_T));
 
+	//*((int*)(&(header->From))) = 0x12345678;
+	//header->From.Address[0] = 0x12;
 	header->Beacon = 1;
 	header->NeedResponse  = 0;
 	header->Response  = 0;
@@ -450,15 +455,16 @@ void* test(void* arg){
 
 	while(true) {
 
-		sleep(15);
 		if(interfaceState == InterfaceState_Receive) {
 			//printf("signal rx\n");
 			//pthread_kill(thread, SIGUSR1);
 			//create data
 			//rise
-			RxDoneHandler(data,sizeof(data),0, LORA_RX_Continiuos);
+			RxDoneHandler(data,sizeof(data),-123, LORA_RX_Continiuos);
 			//printf("signaled rx\n");
+			sleep(60);
 		}
+
 	}
 }
 #endif
