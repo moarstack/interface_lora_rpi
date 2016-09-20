@@ -13,7 +13,7 @@
 
 #define HASH_CONST	0xf2e143
 
-uint32_t addressHash(void* addr, size_t size){
+hashVal_T addressHash(void* addr, size_t size){
 	return hashBytesEx(addr, size, HASH_CONST);
 }
 
