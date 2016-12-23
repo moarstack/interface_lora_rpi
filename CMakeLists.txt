@@ -32,3 +32,16 @@ add_library(moar_interface_lora_rpi SHARED ${SRC_FILES})
 target_link_libraries(moar_interface_lora_rpi moar_shared)
 target_link_libraries(moar_interface_lora_rpi wiringPi)
 #target_link_libraries(moar_interface_lora_rpi pthread)
+
+
+#copy of config
+if(${IFACE_LORA_RPI_ENABLED})
+	set(CONFIG_TARGET_PATH ${CONFIG_LAYERS_ENABLED_OUTPUT_PATH})
+else(${IFACE_LORA_RPI_ENABLED})
+	set(CONFIG_TARGET_PATH ${CONFIG_LAYERS_OUTPUT_PATH})
+endif(${IFACE_LORA_RPI_ENABLED})
+
+file(GLOB LAYER_CONFIG
+  "config/*.conf"
+)
+file(COPY ${LAYER_CONFIG} DESTINATION ${CONFIG_TARGET_PATH})

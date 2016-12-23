@@ -15,6 +15,8 @@
 #include <sys/signalfd.h>
 #include <unistd.h>
 #include <moarCommons.h>
+#include <moarCommonSettings.h>
+#include <moarLayerEntryPoint.h>
 
 int initEpoll(LoraIfaceLayer_T* layer){
 	if(NULL == layer)
@@ -58,12 +60,21 @@ int ifaceInit(LoraIfaceLayer_T* layer, void* arg){
 	if(NULL == arg)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	LogWrite(layer->Log, LogLevel_DebugQuiet, "Interface init");
-	MoarIfaceStartupParams_T* params = (MoarIfaceStartupParams_T*)arg;
+	MoarLayerStartupParams_T* params = (MoarLayerStartupParams_T*)arg;
 	//setup socket to channel
-	if(NULL == params->socketToChannel)
+
+	// load from config here
+	ifaceSocket socketInfo = {0};
+
+	int res = bindingBindStructFunc(params->LayerConfig, makeIfaceSockBinding, &socketInfo);
+	CHECK_RESULT(res);
+
+	// load from config here
+	if(NULL == socketInfo.FileName)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	// conect and add socket
-	strncpy( layer->ChannelSocketPath, params->socketToChannel, SOCKET_FILEPATH_SIZE );
+	strncpy( layer->ChannelSocketPath, socketInfo.FileName, SOCKET_FILEPATH_SIZE );
 	// connect
 	LogWrite(layer->Log, LogLevel_DebugVerbose, "Open socket to channel");
 	int result = SocketOpenFile( layer->ChannelSocketPath, false, &(layer->ChannelSocket));
