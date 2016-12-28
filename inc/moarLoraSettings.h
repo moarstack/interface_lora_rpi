@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <lora.h>
+#include <moarLoraIfaceAddr.h>
 
 typedef struct{
 	LORA_Settings_T LORA_Settings;

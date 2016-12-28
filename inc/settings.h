@@ -9,7 +9,9 @@
 #define SETTINGS_H_
 
 #include "lora.h"
-#include "interface.h"
+#include <ifaceSettings.h>
+
+#include <moarLoraSettings.h>
 
 void Init_IfaceSettings(IfaceSettings_T* settings);
 

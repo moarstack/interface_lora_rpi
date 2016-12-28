@@ -8,13 +8,10 @@
 #include <hwInterface.h>
 #include <interrupts.h>
 #include "loraInterface.h"
-#include <interface.h>
 #include <string.h>
 #include <crc16.h>
 #include <moarInterfaceCommand.h>
-#include <moarIfaceStructs.h>
-#include <moarLoraSettings.h>
-
+#include <interfaceNeighbors.h>
 // returns place in packet where iface header starts
 IfaceHeader_T * Iface_startHeader(void* packet){
 	return (IfaceHeader_T*)(packet + IfaceHeaderStart);

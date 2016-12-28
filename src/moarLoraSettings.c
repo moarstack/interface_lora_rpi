@@ -9,7 +9,6 @@
 #include "settings.h"
 #include "loraSettings.h"
 #include "ifaceSettings.h"
-#include "interface.h"
 #include <hwConfig.h>
 
 void Init_RFM9XSettings(RFM9X_Settings_T* settings)
