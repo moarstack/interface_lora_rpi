@@ -1,9 +1,11 @@
 # MOARstack LORA Interface layer
 ### Description
-This project contains MOARstack interface layer for LORA interface. Layer support only Semtech SX1276/7/8/9 and Raspberry Pi .
+This project contains MOARstack interface layer for LORA interface. Layer support only Semtech SX1276/7/8/9 and Raspberry Pi.
+
 ### Dependency 
 * MOARStack main repository
 * [wiringPi](http://wiringpi.com/)
+
 ### Build
 * Build and install wiringPi
 * Copy this repository inside `layers` subdirectory of main stack repository. Rebuild whole stack, it will include LORA interface layer.
