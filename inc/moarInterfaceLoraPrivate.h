@@ -28,9 +28,16 @@
 #define CHANNEL_PROCESSING_RULES_COUNT		5
 #define NEIGHBORS_TABLE_SIZE				37
 #define LOG_FILE_PATH						"/var/log/lora_iface.log"
-#define IFACE_ADDR_SIZE						sizeof(uint32_t)
 
 
+//states
+typedef enum{
+	TransmissionState_Monitor,
+	TransmissionState_Listening,
+	TransmissionState_Receiving,
+	TransmissionState_Transmiting,
+	TransmissionState_WaitingResponse,
+}TransmissionState_T;
 
 typedef struct{
 	// layer logic

@@ -6,8 +6,28 @@
 #define MOARSTACK_MOARIFACESTRUCTS_H
 
 #include <stdint.h>
-#include <moarInterfaceLoraPrivate.h>
 #include <packet.h>
+
+// maximum size of usual iface packet payload
+#define SzIfaceMaxPacket		256
+
+// size of iface packet header
+#define SzIfaceHeader			sizeof(IfaceHeader_T)
+
+// size of iface packet footer
+#define SzIfaceFooter			sizeof(IfaceFooter_T)
+
+// maximum size of usual iface packet payload
+#define SzIfaceMaxPayloadUsual	(SzIfaceMaxPacket-SzIfaceHeader)
+
+// maximum size of iface beacon packet payload
+#define SzIfaceMaxPayloadBeacon	(SzIfaceMaxPayloadUsual-SzIfaceFooter)
+
+// place where iface packet header starts
+#define IfaceHeaderStart		(0)
+
+// place where iface packet payload starts
+#define IfacePayloadStart		(SzIfaceHeader)
 
 // typedefs for iface header fields
 //typedef uint32_t	IfaceAddr_T;	// type for interface addresses

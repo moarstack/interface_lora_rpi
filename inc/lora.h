@@ -29,80 +29,20 @@ typedef enum{
 
 typedef struct{
 	RFM9X_Settings_T RFM9X_Settings;
-	//	//min freq
-	//	#define MIN_FREQUENCY 0x00E10000
 	uint32_t MinFrequency;
-	//	//max freq
-	//	#define MAX_FREQUENCY 0x00E4C000
 	uint32_t MaxFrequency;
-	//	//channel bandwidth
-	//	#define MIN_CHANNEL_BANDWIDTH 0xCCF
 	uint16_t MinChannelBandWidth;
-	//	//channels count
-	//	#define CHANNELS_COUNT 64
 	uint8_t ChannelsCount;
-
-//	//#define LORA_PABOOST_FORCE
-//	//power
-//	#if defined(BOARD_NXP_LPCXPRESSO_1347) && !defined(LORA_PABOOST_FORCE)
-//	#define LORA_PABOOST 0x00
-//	#else
-//	//#define LORA_PABOOST 0x01
-//	#define LORA_PABOOST 0x00
-//	//#define LORA_PABOOST_ENABLE
-//	#endif
-//	#define LORA_MAXPOWER 0x00
-//	#define LORA_OUTPUTPOWER 0x0F
 	int8_t MaxPower; //default value for iface init
 	int8_t OutputPower; //default value for iface init
-//
-//	#ifdef LORA_PABOOST_ENABLE
-//	#define LORA_MAXOUTPUTPOWER LORA_MAXBOOSTOUTPUTPOWER
-//	#else
-//	#define LORA_MAXOUTPUTPOWER LORA_MAXNOBOOSTOUTPUTPOWER
-//	#endif
-//
-//	#ifdef LORA_PABOOST_ENABLE
-//	#define LORA_MINOUTPUTPOWER LORA_MINBOOSTOUTPUTPOWER
-//	#else
-//	#define LORA_MINOUTPUTPOWER LORA_MINNOBOOSTOUTPUTPOWER
-//	#endif
 	bool UseBoost; //default value for iface init
-	//int8_t MaxOutputPower; //unused
-	//int8_t MinOutputPower; //unused
-//	//channel settings
-//	#define LORA_BANDWIDTH Bw_125000Hz
 	LORA_RegModemConfig_Bw_T Bandwidth;
-//	#define LORA_CODDINGRATE CodingRate_4to5
 	LORA_RegModemConfig_CoddingRate_T CoddingRate;
-//	#define LORA_IMPLICITHEADER 0
 	bool UseImplicitHeader;
-//	//preamble
-//	#define LORA_PREAMBLE 32
 	uint16_t Preamble;
-//	#define LORA_HEADER_OVERHEAD 4
-//	#define LORA_CRC_OVERHEAD 2
-//	#define LORA_PREAMBLE_CONST_OVERHEAD 5
-//	#define LORA_MESSAGE_OVERHEAD (LORA_HEADER_OVERHEAD + LORA_CRC_OVERHEAD + LORA_PREAMBLE_CONST_OVERHEAD)
-	//uint16_t LoraMessageOverhead;
-//	//timeout
-//	#define LORA_TIMEOUT (0x3FF>>6)
 	uint16_t Timeout;
-//	//hops
-//	#define LORA_HOPPERIOD 8
 	uint8_t HopPeriod;
-//	//sf
-//	#define LORA_SPREADINGFACTOR 7
 	uint8_t SpreadingFactor;
-//	//crc on rx
-//	/*Enable CRC generation and check on payload:
-//	0 - CRC disable
-//	1 - CRC enable
-//	If CRC is needed, RxPayloadCrcOn should be set:
-//	- in Implicit header mode: on Tx and Rx side
-//	- in Explicit header mode: on the Tx side alone (recovered from
-//	the header in Rx side) */
-//	#define LORA_RXPAYLOADCRC 0
 	bool RxPayloadCRC;
 }LORA_Settings_T;
 
