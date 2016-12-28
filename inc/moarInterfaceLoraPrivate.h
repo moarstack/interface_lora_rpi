@@ -14,8 +14,12 @@
 #include <poll.h>
 #include <moarTime.h>
 #include <time.h>
-
 #include <stdio.h>
+#include <moarLoraIfaceAddr.h>
+#include <moarLoraSettings.h>
+#include <hashTable.h>
+#include <moarIfaceStructs.h>
+#include <moarLogger.h>
 
 #define EPOLL_SOCKETS_COUNT 				2
 #define EPOLL_CHANNEL_EVENTS 				EPOLLIN
@@ -24,10 +28,9 @@
 #define CHANNEL_PROCESSING_RULES_COUNT		5
 #define NEIGHBORS_TABLE_SIZE				37
 #define LOG_FILE_PATH						"/var/log/lora_iface.log"
+#define IFACE_ADDR_SIZE						sizeof(uint32_t)
 
-#include <moarLoraSettings.h>
-#include <hashTable.h>
-#include <moarIfaceStructs.h>
+
 
 typedef struct{
 	// layer logic
