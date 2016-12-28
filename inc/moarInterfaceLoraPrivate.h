@@ -19,15 +19,11 @@
 
 #define EPOLL_SOCKETS_COUNT 				2
 #define EPOLL_CHANNEL_EVENTS 				EPOLLIN
-#define EPOLL_TIMEOUT						10000
+#define EPOLL_TIMEOUT						1000
 #define EPOLL_EVENTS_COUNT					EPOLL_SOCKETS_COUNT
 #define CHANNEL_PROCESSING_RULES_COUNT		5
-#define IFACE_ADDR_SIZE						4
 #define NEIGHBORS_TABLE_SIZE				37
 #define LOG_FILE_PATH						"/var/log/lora_iface.log"
-typedef struct {
-	uint8_t Address[IFACE_ADDR_SIZE];
-}IfaceAddr_T;
 
 #include <moarLoraSettings.h>
 #include <hashTable.h>
@@ -63,6 +59,7 @@ typedef struct{
 	bool					WaitingResponse;
 	bool 					MonitorMode;
 	bool 					LastIsBeacon;
+	bool					ResetEnabled;
 	// timeouts
 	moarTime_T 				LastBeacon;
 	moarTime_T 				LastBeaconSent;
@@ -71,8 +68,11 @@ typedef struct{
 	moarTime_T 				ListenBeaconStart;
 	moarTime_T 				TransmitResetTime;
 	moarTime_T 				TransmitStartTime;
+	moarTime_T 				IfaceResetTimeout;
 	moarTime_T				BeaconSendInterval;
+	moarTime_T 				LastReceivedDataTime;
 	moarTime_T 				WaitingResponseTime;
+	moarTime_T 				LastResetTime;
 	// other
 	uint16_t				NetSpeed;
 	// current message
@@ -88,6 +88,7 @@ typedef struct{
 	int 					BrokenCounter;
 	// logging
 	LogHandle_T 			Log;
+	int 					displayFd;
 }LoraIfaceLayer_T;
 
 #pragma pack(push, 1)

@@ -3,6 +3,7 @@
 //
 
 #include <funcResults.h>
+#include <stdint.h>
 #include <moarInterfaceLoraPrivate.h>
 #include <hwInterface.h>
 #include <interrupts.h>
@@ -12,6 +13,7 @@
 #include <crc16.h>
 #include <moarInterfaceCommand.h>
 #include <moarIfaceStructs.h>
+#include <moarLoraSettings.h>
 
 // returns place in packet where iface header starts
 IfaceHeader_T * Iface_startHeader(void* packet){
@@ -98,11 +100,15 @@ int interfaceInit(LoraIfaceLayer_T* layer){
 		LogErrMoar(layer->Log, LogLevel_Critical, neighborsRes, "Beacon creating failed");
 		return beaconRes;
 	}
+	layer->ResetEnabled = false;
 	layer->StartupTime = timeGetCurrent();
 	layer->LastBeaconSent = timeGetCurrent();
 	layer->BeaconSendInterval = layer->Settings.BeaconStartupInterval;
 	layer->TransmitResetTime = INFINITY_TIME;
 	layer->WaitingResponseTime = INFINITY_TIME;
+	layer-> IfaceResetTimeout = layer->Settings.BeaconListenForce*10;
+	layer->LastResetTime = timeGetCurrent();
+	layer->LastReceivedDataTime = INFINITY_TIME;
 	// reset interface state here
 	return FUNC_RESULT_SUCCESS;
 }
@@ -159,7 +165,7 @@ int updateNeighbors(LoraIfaceLayer_T* layer, IfaceHeader_T* header, int16_t rssi
 		neighbor.LastSeen = timeGetCurrent();
 		neighbor.MinSensitivity = footer->MinSensitivity;
 		LogWrite(layer->Log, LogLevel_DebugVerbose, "Call beacon update");
-		updateRes = neighborsUpdate(layer, &neighbor, Iface_startPayload(header), header->Size);
+		updateRes = neighborsUpdate(layer, &neighbor, Iface_startPayload(header), (PayloadSize_T)header->Size);
 	} else{
 		LogWrite(layer->Log, LogLevel_DebugVerbose, "Updating last seen");
 		// update last seen
@@ -178,13 +184,14 @@ IfaceListenChannel_T startListen(LoraIfaceLayer_T* layer){
 		return ListenChannel_Monitor;
 	}
 	moarTime_T  currentTime = timeGetCurrent();
-	if((!layer->WaitingResponse && 	(layer->Neighbors.Count==0 ||
+	//LogWrite(layer->Log, LogLevel_Dump, "Listen beacon %d and listened for %lld timeout %d",layer->ListenBeacon, (currentTime-layer->ListenBeaconStart), layer->Settings.BeaconListenTimeout);
+	if((!layer->WaitingResponse && 	(layer->Neighbors.Count==0 || // not waiting response no neighbors
 			(timeCompare(timeGetDifference(currentTime, layer->LastBeaconReceived),
-				 layer->Settings.BeaconListenForce) > 0)||
+				 layer->Settings.BeaconListenForce) > 0)||  // last beacon was to long ago
 			timeCompare(timeGetDifference(currentTime, layer->StartupTime),
-				layer->Settings.BeaconListenStartup) < 0 ||
+				layer->Settings.BeaconListenStartup) < 0 || // startup
 			(layer->ListenBeacon && timeCompare(timeGetDifference(currentTime,layer->ListenBeaconStart),
-										layer->Settings.BeaconListenTimeout)<0)))
+										layer->Settings.BeaconListenTimeout)<0))) //listen for specific time
 			){
 		if(layer->Neighbors.Count == 0 )
 			LogWrite(layer->Log, LogLevel_Dump, "No neighbors\n");
@@ -196,7 +203,7 @@ IfaceListenChannel_T startListen(LoraIfaceLayer_T* layer){
 			LogWrite(layer->Log, LogLevel_Dump, "Current time %lld < %d\n",currentTime-layer->StartupTime,layer->Settings.BeaconListenStartup);
 		if(layer->ListenBeacon && timeCompare(timeGetDifference(currentTime,layer->ListenBeaconStart),
 										layer->Settings.BeaconListenTimeout)<0)
-			LogWrite(layer->Log, LogLevel_Dump, "Listen beacon and listened for %lld < %d\n",(currentTime-layer->LastBeaconReceived),layer->Settings.BeaconListenTimeout);
+			LogWrite(layer->Log, LogLevel_Dump, "Listen beacon and listened for %lld < %d\n",(currentTime-layer->ListenBeaconStart),layer->Settings.BeaconListenTimeout);
 		if(!layer->ListenBeacon)
 			layer->ListenBeaconStart = currentTime;
 		layer->ListenBeacon = true;
@@ -342,6 +349,7 @@ int processReceivedMessage(LoraIfaceLayer_T* layer, RxData_T* data){
 		// is data
 		if(header->Size!=0 && !header->Response && !header->Beacon) {
 			LogWrite(layer->Log, LogLevel_DebugQuiet, "Data %d bytes", header->Size);
+			layer->LastReceivedDataTime = timeGetCurrent();
 			// process data
 			int notifyRes = processIfaceReceived(layer, &(header->From), Iface_startPayload(header), header->Size);
 		}
@@ -371,6 +379,7 @@ int interfaceStateProcessing(LoraIfaceLayer_T* layer){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	moarTime_T  currentTime = timeGetCurrent();
 	bool rts = readyToSend() && !layer->WaitingResponse && !layer->MonitorMode && !layer->Busy;
+
 	// waiting response timeout
 	if(layer->WaitingResponse && timeCompare(currentTime, layer->WaitingResponseTime)>0){
 		LogWrite(layer->Log, LogLevel_Warning, "No response in timeout");
@@ -386,12 +395,24 @@ int interfaceStateProcessing(LoraIfaceLayer_T* layer){
 		processIfaceMsgState(layer, &(layer->CurrentMid), IfacePackState_Timeouted);
 	}
 	// send timeout
-	if(timeCompare(currentTime, layer->TransmitResetTime)>0)
+	if((layer->Busy && timeCompare(currentTime, layer->TransmitResetTime)>0) ||
+			(// last reset was long long time ago
+			(timeCompare(currentTime, timeAddInterval(layer->LastResetTime, layer->IfaceResetTimeout))>0) && (
+			// data not received to long
+			//(timeCompare(currentTime, timeAddInterval(layer->LastReceivedDataTime, layer->IfaceResetTimeout))>0) ||
+			// beacons not received
+			(timeCompare(currentTime, timeAddInterval(layer->LastBeaconReceived, layer->IfaceResetTimeout))>0))
+			))
 	{
 		LogWrite(layer->Log, LogLevel_Warning, "Reseting lora interface");
+		LogWrite(layer->Log, LogLevel_Dump, "Layer busy %d and tx timeout %d", layer->Busy, timeCompare(currentTime, layer->TransmitResetTime));
+		LogWrite(layer->Log, LogLevel_Dump, "Inter reset interval %d", timeCompare(currentTime, timeAddInterval(layer->LastResetTime, layer->IfaceResetTimeout)));
+		LogWrite(layer->Log, LogLevel_Dump, "No data to long %d", timeCompare(currentTime, timeAddInterval(layer->LastReceivedDataTime, layer->IfaceResetTimeout)));
+		LogWrite(layer->Log, LogLevel_Dump, "No beacons to long %d", timeCompare(currentTime, timeAddInterval(layer->LastBeaconReceived, layer->IfaceResetTimeout)));
 		// reset lora
 		Init_LORA(&(layer->Settings.LORA_Settings), layer->Log);
 		resetInterfaceState();
+		layer->LastResetTime = currentTime;
 		// reset busy
 		layer->Busy = false;
 		// reset time
@@ -444,7 +465,7 @@ int interfaceStateProcessing(LoraIfaceLayer_T* layer){
 			layer->BeaconSendInterval = layer->Settings.BeaconSendInterval +
 										((rand() % layer->Settings.BeaconSendDeviation) -
 										 layer->Settings.BeaconSendDeviation / 2);
-			LogWrite(layer->Log, LogLevel_Dump, "Changing beacon send interval to %d", layer->BeaconSendInterval);
+			LogWrite(layer->Log, LogLevel_Dump, "Changing beacon send interval to %lld", layer->BeaconSendInterval);
 		}
 	}
 
