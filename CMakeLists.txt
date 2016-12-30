@@ -1,19 +1,47 @@
 cmake_minimum_required(VERSION 3.0)
-project(libmoar_lora_interface) 
-
-set(LIBRARY_OUTPUT_PATH ../../lib)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -g3 -fPIC")
+project(libmoar_interface_lora_rpi)
 
 file(GLOB SRC_FILES
-    "src/*.c"
-)
+        "src/*.c"
+        )
+
+if(${DISABLE_IO})
+    if(${EMULATE_IO})
+        message("IO Emulated")
+        add_definitions(-DDEBUG_THREADS)
+    else(${EMULATE_IO})
+        message("IO Disabled")
+    endif(${EMULATE_IO})
+else(${DISABLE_IO})
+    message("IO Enabled")
+    add_definitions(-DENABLE_IO)
+endif(${DISABLE_IO})
+
+#message(${CMAKE_C_FLAGS})
 
 #add shared layers headers
 include_directories(../shared/inc)
 
 #add local headers
 include_directories(inc)
-
+#include wiring pi here
+include_directories(${WIRING_PI_INC_PATH})
+message("WiringPI include path = " ${WIRING_PI_INC_PATH})
 #add library
-add_library(moar_lora_interface SHARED ${SRC_FILES})
-target_link_libraries(moar_lora_interface moar_shared)
+add_library(moar_interface_lora_rpi SHARED ${SRC_FILES})
+target_link_libraries(moar_interface_lora_rpi moar_shared)
+target_link_libraries(moar_interface_lora_rpi wiringPi)
+#target_link_libraries(moar_interface_lora_rpi pthread)
+
+
+#copy of config
+if(${IFACE_LORA_RPI_ENABLED})
+	set(CONFIG_TARGET_PATH ${CONFIG_LAYERS_ENABLED_OUTPUT_PATH})
+else(${IFACE_LORA_RPI_ENABLED})
+	set(CONFIG_TARGET_PATH ${CONFIG_LAYERS_OUTPUT_PATH})
+endif(${IFACE_LORA_RPI_ENABLED})
+
+file(GLOB LAYER_CONFIG
+  "config/*.conf"
+)
+file(COPY ${LAYER_CONFIG} DESTINATION ${CONFIG_TARGET_PATH})
